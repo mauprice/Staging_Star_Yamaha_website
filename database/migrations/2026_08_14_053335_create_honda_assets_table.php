@@ -9,6 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('honda_assets', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+
             $table->id();
             $table->string('guid')->unique();
             $table->text('source_url');
