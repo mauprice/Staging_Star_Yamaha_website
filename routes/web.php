@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\SitemapController;
@@ -11,6 +12,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('yamaha.index');
+});
+
+// Registered before the Yamaha wildcard {group} routes below - otherwise
+// /bikes/honda would be captured by Yamaha's {group} parameter and 404
+// inside YamahaController::group() before ever reaching these.
+Route::prefix('bikes/honda')->name('honda.')->group(function () {
+    Route::get('/', [HondaController::class, 'index'])->name('index');
+    Route::get('/{category}', [HondaController::class, 'category'])->name('category');
+    Route::get('/{category}/{subcategory}', [HondaController::class, 'subcategory'])->name('subcategory');
+    Route::get('/{category}/{subcategory}/{slug}', [HondaController::class, 'product'])->name('product');
 });
 
 Route::prefix('bikes')->name('yamaha.')->group(function () {

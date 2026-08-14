@@ -88,6 +88,25 @@
                         </div>
                     </div>
 
+                    {{-- Honda Products dropdown --}}
+                    <div class="nav-item relative flex items-center">
+                        <a href="{{ route('honda.index') }}"
+                           class="flex items-center gap-1 px-4 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                            Honda Products
+                            <svg class="w-3 h-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </a>
+                        <div class="nav-dropdown absolute top-full left-0 bg-white shadow-2xl border-t-2 border-brand min-w-[180px] py-2 z-50">
+                            @foreach(\Honda\Catalog\Models\HondaModel::select('category')->distinct()->pluck('category') as $hondaCategory)
+                            <a href="{{ route('honda.category', $hondaCategory) }}"
+                               class="block px-5 py-2.5 text-gray-700 hover:bg-brand-tint hover:text-brand transition-colors text-xs font-semibold uppercase tracking-wide">
+                                {{ \App\Http\Controllers\HondaController::labelForCategory($hondaCategory) }}
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
+
                     {{-- Pre-Owned dropdown --}}
                     <div class="nav-item relative flex items-center">
                         <a href="{{ route('yamaha.preowned') }}"
