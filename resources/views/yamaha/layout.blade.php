@@ -250,6 +250,30 @@
                 </div>
             </div>
 
+            {{-- Honda Products --}}
+            <div class="border-b border-gray-100" x-data="{ open: false }">
+                <button @click="open = !open"
+                        class="flex items-center justify-between w-full px-4 py-3 font-black text-sm uppercase tracking-wide text-gray-900 hover:text-brand">
+                    Honda Products
+                    <svg class="w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                    @foreach(\Honda\Catalog\Models\HondaModel::select('category')->distinct()->pluck('category') as $hondaCategory)
+                    <a href="{{ route('honda.category', $hondaCategory) }}"
+                       class="block px-8 py-2.5 text-sm text-gray-600 hover:text-brand border-l-2 border-transparent hover:border-brand ml-4 transition-colors">
+                        {{ \App\Http\Controllers\HondaController::labelForCategory($hondaCategory) }}
+                    </a>
+                    @endforeach
+                    <a href="{{ route('honda.offers') }}"
+                       class="block px-8 py-2.5 text-sm text-brand font-semibold border-l-2 border-transparent hover:border-brand ml-4 transition-colors">
+                        Honda Offers
+                    </a>
+                </div>
+            </div>
+
             {{-- Pre-Owned --}}
             <div class="border-b border-gray-100" x-data="{ open: false }">
                 <button @click="open = !open"
