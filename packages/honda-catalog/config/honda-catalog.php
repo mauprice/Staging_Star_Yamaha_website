@@ -45,6 +45,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Offers
+    |--------------------------------------------------------------------------
+    | entry_path is the single starting point for offer discovery - unlike
+    | models (found via the sitemap), offer campaigns are just whatever
+    | .block--card entries are on this page right now. Any of those cards
+    | whose CTA links to another /offers/... page (e.g. a runout campaign's
+    | own listing) is followed and ingested as that offer's children, so new
+    | offer sub-pages are picked up automatically without a code change.
+    */
+    'offers' => [
+        'entry_path' => env('HONDA_CATALOG_OFFERS_ENTRY_PATH', '/offers'),
+        'child_page_pattern' => '#^/offers/#',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pricing
     |--------------------------------------------------------------------------
     | Ride-away pricing is not present as text anywhere in the static HTML -
@@ -109,6 +125,20 @@ return [
             'category_name' => '.specsTable__category-name',
             'subcategory_name' => '.specsTable__subcategory-name',
             'subcategory_content' => '.specsTable__subcategory-content',
+        ],
+        'offer_page' => [
+            'block' => '.block.block--card',
+            'title' => 'h2.field-blocktitle',
+            'subtitle' => '.field-blocksubtitle',
+            'price' => '.sale-price',
+            // Honda's markup nests <p class="field-blockcontent"><p>...</p></p> -
+            // browsers (and DomCrawler) auto-close the outer <p> on the inner
+            // one per HTML5 rules, leaving .field-blockcontent empty. .cmp-text
+            // is the real wrapping div and isn't affected, same workaround as
+            // model_page.description above.
+            'body' => '.block__body-text .cmp-text, .field-blockcontent',
+            'image' => '.block__image-link image, .block__image-link img',
+            'cta' => '.ctasBlock__item--cta',
         ],
     ],
 

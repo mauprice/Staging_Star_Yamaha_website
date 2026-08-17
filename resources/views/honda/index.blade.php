@@ -24,16 +24,21 @@
 
     {{-- Category Cards --}}
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($categoryPreviews as $slug => $preview)
-            <x-media-tile
-                href="{{ route('honda.category', $slug) }}"
-                image="{{ $preview['image'] }}"
-                :imageAlt="$preview['label']"
-                label="{{ $preview['label'] }}"
-                sublabel="{{ $preview['count'] }} model{{ $preview['count'] !== 1 ? 's' : '' }} →"
-                ratio="16/9" />
-            @endforeach
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                @foreach($categoryPreviews as $slug => $preview)
+                <x-media-tile
+                    href="{{ route('honda.category', $slug) }}"
+                    image="{{ $preview['image'] }}"
+                    :imageAlt="$preview['label']"
+                    label="{{ $preview['label'] }}"
+                    sublabel="{{ $preview['count'] }} model{{ $preview['count'] !== 1 ? 's' : '' }} →"
+                    ratio="16/9" />
+                @endforeach
+            </div>
+            <aside class="lg:col-span-1">
+                <x-honda-offer-panel :offers="$offers" />
+            </aside>
         </div>
     </section>
 

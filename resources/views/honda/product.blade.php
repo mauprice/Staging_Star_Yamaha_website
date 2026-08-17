@@ -148,6 +148,9 @@
                 </div>
                 @endif
 
+                {{-- Current Offers --}}
+                <x-honda-offer-panel :offers="$offers" />
+
                 {{-- Enquiry CTA --}}
                 <div class="rounded-xl p-6 text-white bg-accent">
                     <h3 class="font-black text-lg uppercase mb-1">Interested in the {{ $model->name }}?</h3>

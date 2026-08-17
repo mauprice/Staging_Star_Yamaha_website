@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Honda\Catalog\Models\HondaModel;
+use Honda\Catalog\Models\HondaOffer;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class HondaController extends Controller
@@ -44,7 +46,31 @@ class HondaController extends Controller
             }
         }
 
-        return view('honda.index', compact('categoryPreviews'));
+        $offers = $this->activeOffers();
+
+        return view('honda.index', compact('categoryPreviews', 'offers'));
+    }
+
+    public function offers(): View
+    {
+        $offers = $this->activeOffers();
+
+        return view('honda.offers', compact('offers'));
+    }
+
+    public function offer(string $slug): View
+    {
+        $offer = HondaOffer::whereNull('parent_id')
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['image', 'children' => fn ($q) => $q->where('is_active', true)->with(['image', 'hondaModel'])])
+            ->first();
+
+        if (! $offer) {
+            abort(404);
+        }
+
+        return view('honda.offer', compact('offer'));
     }
 
     public function category(string $category): View
@@ -69,7 +95,9 @@ class HondaController extends Controller
             $subcategoryLabels[$sub] = self::labelForSubcategory($sub);
         }
 
-        return view('honda.category', compact('category', 'categoryLabel', 'subcategories', 'previews', 'subcategoryLabels'));
+        $offers = $this->activeOffers();
+
+        return view('honda.category', compact('category', 'categoryLabel', 'subcategories', 'previews', 'subcategoryLabels', 'offers'));
     }
 
     public function subcategory(string $category, string $subcategory): View
@@ -87,7 +115,9 @@ class HondaController extends Controller
         $categoryLabel = self::labelForCategory($category);
         $subcategoryLabel = self::labelForSubcategory($subcategory);
 
-        return view('honda.subcategory', compact('category', 'categoryLabel', 'subcategory', 'subcategoryLabel', 'models'));
+        $offers = $this->activeOffers();
+
+        return view('honda.subcategory', compact('category', 'categoryLabel', 'subcategory', 'subcategoryLabel', 'models', 'offers'));
     }
 
     public function product(string $category, string $subcategory, string $slug): View
@@ -112,10 +142,23 @@ class HondaController extends Controller
         $categoryLabel = self::labelForCategory($category);
         $subcategoryLabel = self::labelForSubcategory($subcategory);
         $specGroups = $this->buildSpecGroups($model);
+        $offers = $this->activeOffers();
 
         return view('honda.product', compact(
-            'model', 'category', 'categoryLabel', 'subcategory', 'subcategoryLabel', 'specGroups',
+            'model', 'category', 'categoryLabel', 'subcategory', 'subcategoryLabel', 'specGroups', 'offers',
         ));
+    }
+
+    /**
+     * @return Collection<int, HondaOffer>
+     */
+    private function activeOffers(): Collection
+    {
+        return HondaOffer::whereNull('parent_id')
+            ->where('is_active', true)
+            ->with(['image', 'hondaModel', 'children' => fn ($q) => $q->where('is_active', true)])
+            ->orderBy('sort')
+            ->get();
     }
 
     /**

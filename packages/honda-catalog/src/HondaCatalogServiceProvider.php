@@ -7,15 +7,18 @@ use GuzzleHttp\ClientInterface;
 use Honda\Catalog\Assets\AssetManager;
 use Honda\Catalog\Console\InstallCommand;
 use Honda\Catalog\Console\MirrorAssetsCommand;
+use Honda\Catalog\Console\OfferSyncCommand;
 use Honda\Catalog\Console\SyncCommand;
 use Honda\Catalog\Crawling\SitemapCrawler;
 use Honda\Catalog\Http\RobotsTxtChecker;
 use Honda\Catalog\Http\ThrottledHttpClient;
 use Honda\Catalog\Http\ThrottleGate;
 use Honda\Catalog\Parsing\ModelPageParser;
+use Honda\Catalog\Parsing\OfferPageParser;
 use Honda\Catalog\Parsing\SpecsPageParser;
 use Honda\Catalog\Pricing\MpePcmPricingClient;
 use Honda\Catalog\Services\IngestService;
+use Honda\Catalog\Services\OfferIngestService;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -34,11 +37,13 @@ class HondaCatalogServiceProvider extends PackageServiceProvider
                 '2026_01_01_000005_create_honda_specifications_table',
                 '2026_01_01_000006_create_honda_colours_table',
                 '2026_01_01_000007_create_honda_model_asset_table',
+                '2026_01_01_000008_create_honda_offers_table',
             ])
             ->hasCommands([
                 InstallCommand::class,
                 SyncCommand::class,
                 MirrorAssetsCommand::class,
+                OfferSyncCommand::class,
             ]);
     }
 
@@ -84,6 +89,10 @@ class HondaCatalogServiceProvider extends PackageServiceProvider
             return new SpecsPageParser(config('honda-catalog.selectors.specs_page', []));
         });
 
+        $this->app->singleton(OfferPageParser::class, function ($app) {
+            return new OfferPageParser(config('honda-catalog.selectors.offer_page', []));
+        });
+
         $this->app->singleton(AssetManager::class, function ($app) {
             return new AssetManager(
                 $app->make(ThrottledHttpClient::class),
@@ -105,6 +114,15 @@ class HondaCatalogServiceProvider extends PackageServiceProvider
                 $app->make(SpecsPageParser::class),
                 $app->make(AssetManager::class),
                 $app->make(MpePcmPricingClient::class),
+                config('honda-catalog', []),
+            );
+        });
+
+        $this->app->singleton(OfferIngestService::class, function ($app) {
+            return new OfferIngestService(
+                $app->make(ThrottledHttpClient::class),
+                $app->make(OfferPageParser::class),
+                $app->make(AssetManager::class),
                 config('honda-catalog', []),
             );
         });

@@ -19,6 +19,10 @@ Route::get('/', function () {
 // inside YamahaController::group() before ever reaching these.
 Route::prefix('bikes/honda')->name('honda.')->group(function () {
     Route::get('/', [HondaController::class, 'index'])->name('index');
+    // Registered before {category} - otherwise the wildcard route below
+    // would capture /offers as a category slug and 404 in category().
+    Route::get('/offers', [HondaController::class, 'offers'])->name('offers');
+    Route::get('/offers/{slug}', [HondaController::class, 'offer'])->name('offers.show');
     Route::get('/{category}', [HondaController::class, 'category'])->name('category');
     Route::get('/{category}/{subcategory}', [HondaController::class, 'subcategory'])->name('subcategory');
     Route::get('/{category}/{subcategory}/{slug}', [HondaController::class, 'product'])->name('product');

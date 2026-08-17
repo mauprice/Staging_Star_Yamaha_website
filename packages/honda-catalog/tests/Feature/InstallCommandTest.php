@@ -16,12 +16,19 @@ class InstallCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        // vendor:publish physically copies migration files into the
-        // Testbench skeleton app on disk; clean them up so they don't leak
-        // into other test classes on the next run.
+        // vendor:publish physically copies migration and config files into
+        // the Testbench skeleton app on disk; clean them up so they don't
+        // leak into other test classes on the next run. Left uncleaned, the
+        // config copy in particular is force=false published (see
+        // InstallCommand), so it freezes at whatever content existed the
+        // first time this test ever ran and silently shadows any later
+        // edits to config/honda-catalog.php in every other test's config()
+        // resolution.
         foreach (glob(__DIR__.'/../../vendor/orchestra/testbench-core/laravel/database/migrations/*_create_honda_*_table.php') as $file) {
             @unlink($file);
         }
+
+        @unlink(__DIR__.'/../../vendor/orchestra/testbench-core/laravel/config/honda-catalog.php');
 
         parent::tearDown();
     }

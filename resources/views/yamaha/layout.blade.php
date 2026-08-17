@@ -104,6 +104,10 @@
                                 {{ \App\Http\Controllers\HondaController::labelForCategory($hondaCategory) }}
                             </a>
                             @endforeach
+                            <a href="{{ route('honda.offers') }}"
+                               class="block px-5 py-2.5 text-brand hover:bg-brand-tint transition-colors text-xs font-semibold uppercase tracking-wide border-t border-gray-100 mt-1 pt-2.5">
+                                Honda Offers
+                            </a>
                         </div>
                     </div>
 
