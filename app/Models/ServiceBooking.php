@@ -12,6 +12,7 @@ class ServiceBooking extends Model
         'service_type', 'preferred_date', 'preferred_time',
         'notes', 'read_at',
         'staff_reply', 'alt_date_1', 'alt_date_2', 'alt_date_3', 'replied_at',
+        'customer_reply', 'customer_replied_at',
     ];
 
     protected $casts = [
@@ -21,6 +22,7 @@ class ServiceBooking extends Model
         'alt_date_3'     => 'date',
         'read_at'        => 'datetime',
         'replied_at'     => 'datetime',
+        'customer_replied_at' => 'datetime',
     ];
 
     public function isUnread(): bool

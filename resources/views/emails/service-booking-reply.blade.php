@@ -3,7 +3,7 @@
 
 Hi {{ $booking->name }},
 
-Thank you for contacting NorthStar Yamaha. Please find our response to your service booking request below.
+Thank you for contacting Star Yamaha. Please find our response to your service booking request below.
 
 ---
 
@@ -70,12 +70,12 @@ Please reply to this email or call us to confirm which date suits you best.
 If you have any questions, please don't hesitate to contact us.
 
 **Phone:** (07) 3266 8000
-**Email:** service@northstarmotorcycles.com.au
+**Email:** service@staryamaha.com.au
 
-<x-mail::button url="mailto:service@northstarmotorcycles.com.au">
-Reply to NorthStar Yamaha
+<x-mail::button :url="$replyUrl">
+Reply to Star Yamaha
 </x-mail::button>
 
 Thanks,
-NorthStar Yamaha Service Department
+Star Yamaha Service Department
 </x-mail::message>

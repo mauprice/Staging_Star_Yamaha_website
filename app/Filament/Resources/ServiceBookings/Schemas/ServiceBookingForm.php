@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ServiceBookings\Schemas;
 
+use App\Models\ServiceBooking;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -42,6 +43,17 @@ class ServiceBookingForm
                 Section::make('Customer Notes')
                     ->schema([
                         Textarea::make('notes')->disabled()->rows(4)->columnSpanFull(),
+                    ]),
+
+                Section::make('Customer Follow-up')
+                    ->description('Message the customer sent back through the website reply form.')
+                    ->visible(fn (?ServiceBooking $record) => filled($record?->customer_reply))
+                    ->schema([
+                        Textarea::make('customer_reply')
+                            ->label('Customer Message')
+                            ->disabled()
+                            ->rows(4)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Reply to Customer')

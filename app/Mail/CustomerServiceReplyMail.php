@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Filament\Resources\ServiceBookings\ServiceBookingResource;
 use App\Models\ServiceBooking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -9,9 +10,8 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\URL;
 
-class ServiceBookingReplyMail extends Mailable
+class CustomerServiceReplyMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -20,20 +20,17 @@ class ServiceBookingReplyMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Service Booking Request — Star Yamaha',
-            replyTo: [new Address(
-                config('mail.from.address', 'info@staryamaha.com.au'),
-                config('mail.from.name', 'Star Yamaha')
-            )],
+            subject: 'Customer Reply — Booking #' . $this->booking->id . ' (' . $this->booking->name . ')',
+            replyTo: [new Address($this->booking->email, $this->booking->name)],
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.service-booking-reply',
+            markdown: 'emails.customer-service-reply',
             with: [
-                'replyUrl' => URL::signedRoute('yamaha.service-booking.reply', ['serviceBooking' => $this->booking]),
+                'adminUrl' => ServiceBookingResource::getUrl('edit', ['record' => $this->booking]),
             ],
         );
     }

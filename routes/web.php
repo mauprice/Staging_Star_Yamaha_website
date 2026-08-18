@@ -6,6 +6,7 @@ use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceBookingReplyController;
 use App\Http\Controllers\SpecialController;
 use App\Http\Controllers\YamahaController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,15 @@ Route::get('/finance', function () {
 
 Route::get('/tyres-service', [ServiceController::class, 'index'])->name('yamaha.service');
 Route::post('/tyres-service', [ServiceController::class, 'store'])->name('yamaha.service.store');
+
+// Signed links emailed to customers so they can reply from the booking
+// confirmation email without needing a local email client (mailto: fallback).
+Route::get('/service-bookings/{serviceBooking}/reply', [ServiceBookingReplyController::class, 'show'])
+    ->middleware('signed')
+    ->name('yamaha.service-booking.reply');
+Route::post('/service-bookings/{serviceBooking}/reply', [ServiceBookingReplyController::class, 'store'])
+    ->middleware('signed')
+    ->name('yamaha.service-booking.reply.store');
 
 Route::get('/about-us', function () {
     return view('yamaha.about');
