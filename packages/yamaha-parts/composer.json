@@ -1,0 +1,33 @@
+{
+    "name": "yamaha/parts",
+    "description": "Yamaha genuine parts catalogue (products, assemblies, parts, pricing) sourced from the official YPIC dealer disc.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "yamaha", "parts", "catalogue"],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+        "spatie/laravel-package-tools": "^1.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Yamaha\\Parts\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Yamaha\\Parts\\YamahaPartsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}

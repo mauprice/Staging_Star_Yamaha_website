@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4b52b66d551d1a8f1d43994bca05d381",
+    "content-hash": "0356ed3c316eb11c4e31f308e8d9f312",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -8784,6 +8784,47 @@
                 }
             ],
             "time": "2026-04-26T05:33:54+00:00"
+        },
+        {
+            "name": "yamaha/parts",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/yamaha-parts",
+                "reference": "a0ae85bc60738f34a993548030754f811e82732d"
+            },
+            "require": {
+                "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.9"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Yamaha\\Parts\\YamahaPartsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Yamaha\\Parts\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Yamaha genuine parts catalogue (products, assemblies, parts, pricing) sourced from the official YPIC dealer disc.",
+            "keywords": [
+                "catalogue",
+                "laravel",
+                "parts",
+                "yamaha"
+            ],
+            "transport-options": {
+                "relative": true
+            }
         }
     ],
     "packages-dev": [
@@ -11403,7 +11444,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "honda/catalog": 20
+        "honda/catalog": 20,
+        "yamaha/parts": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

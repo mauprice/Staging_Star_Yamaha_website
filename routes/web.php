@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PartsCatalogueController;
 use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ProfileController;
@@ -81,9 +82,18 @@ Route::post('/sell-my-bike', [PreOwnedController::class, 'sellStore'])->name('ya
 Route::get('/specials', [SpecialController::class, 'index'])->name('yamaha.specials');
 Route::get('/specials/{id}-{slug}', [SpecialController::class, 'show'])->name('yamaha.specials.show');
 
-Route::get('/parts-finder', function () {
+Route::get('/parts-finder{path?}', function () {
     return view('yamaha.parts-finder');
-})->name('yamaha.parts-finder');
+})->where('path', '.*')->name('yamaha.parts-finder');
+
+Route::prefix('api/parts-catalogue')->name('api.parts-catalogue.')->group(function () {
+    Route::get('/products', [PartsCatalogueController::class, 'products'])->name('products');
+    Route::get('/products/years', [PartsCatalogueController::class, 'years'])->name('products.years');
+    Route::get('/products/types', [PartsCatalogueController::class, 'types'])->name('products.types');
+    Route::get('/products/{id}', [PartsCatalogueController::class, 'show'])->name('products.show');
+    Route::get('/assemblies/{id}', [PartsCatalogueController::class, 'showAssembly'])->name('assemblies.show');
+    Route::get('/parts/search', [PartsCatalogueController::class, 'searchParts'])->name('parts.search');
+});
 
 Route::get('/shop-parts', function () {
     return view('yamaha.shop-parts');

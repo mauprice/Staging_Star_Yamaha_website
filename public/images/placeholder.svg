@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f3f4f6"/>
+  <rect x="20" y="20" width="760" height="560" rx="12" fill="none" stroke="#d1d5db" stroke-width="2" stroke-dasharray="8,4"/>
+  <g transform="translate(400,270)" fill="#9ca3af">
+    <rect x="-60" y="-60" width="120" height="90" rx="8" fill="none" stroke="#9ca3af" stroke-width="3"/>
+    <circle cx="0" cy="20" r="25" fill="none" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="-45" y1="-15" x2="45" y2="35" stroke="#9ca3af" stroke-width="3"/>
+    <text x="0" y="90" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#9ca3af">Diagram not yet extracted</text>
+    <text x="0" y="115" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#d1d5db">Run: php artisan ypic:import-images</text>
+  </g>
+</svg>
