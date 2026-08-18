@@ -86,7 +86,7 @@
         <!-- Parts list panel -->
         <div :class="hasImage ? 'flex-1 min-w-0' : 'w-full'">
           <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between sticky top-[57px] z-10">
+            <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <h2 class="font-semibold text-gray-700 text-sm">Parts List</h2>
               <span class="text-xs text-gray-400">{{ parts.length }} parts</span>
             </div>
