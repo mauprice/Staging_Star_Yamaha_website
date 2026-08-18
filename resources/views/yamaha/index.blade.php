@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Yamaha Product Range')
-@section('meta_description', 'NorthStar Yamaha is an authorised Yamaha Motor dealer offering the full range of Yamaha motorcycles, scooters, watercraft, ATVs, side-by-sides and more.')
+@section('meta_description', 'Star Yamaha is an authorised Yamaha Motor dealer offering the full range of Yamaha motorcycles, scooters, watercraft, ATVs, side-by-sides and more.')
 
 @section('content')
 
@@ -13,17 +13,22 @@
 </style>
 
     {{-- Hero Slider --}}
-    @php $slides = $promotions->where('active', true)->whereNotNull('image')->values(); @endphp
-
     <div class="relative overflow-hidden bg-ink slider-hero" style="max-height: 700px;">
 
         @if($slides->isNotEmpty())
             @foreach($slides as $i => $promo)
             <div class="slider-slide absolute inset-0 transition-opacity duration-700"
                  style="opacity: {{ $i === 0 ? '1' : '0' }}; z-index: {{ $i === 0 ? '1' : '0' }};">
+                @if(($promo->fit ?? 'cover') === 'contain')
+                <div class="absolute inset-0 bg-center bg-cover scale-110 blur-2xl opacity-50" style="background-image: url('{{ $promo->image }}');"></div>
+                <img src="{{ $promo->image }}" alt="{{ $promo->head }}"
+                     @if($i === 0) loading="eager" fetchpriority="high" @else loading="lazy" @endif
+                     class="relative w-full h-full object-contain object-center">
+                @else
                 <img src="{{ $promo->image }}" alt="{{ $promo->head }}"
                      @if($i === 0) loading="eager" fetchpriority="high" @else loading="lazy" @endif
                      class="w-full h-full object-cover object-center">
+                @endif
             </div>
             @endforeach
         @else
@@ -50,7 +55,7 @@
                     @if($promo->brief)
                     <p class="text-gray-300 mt-2 text-xs sm:text-sm leading-relaxed line-clamp-2 hidden sm:block">{{ $promo->brief }}</p>
                     @endif
-                    <x-btn href="{{ route('yamaha.specials') }}" variant="dark" class="mt-4">
+                    <x-btn href="{{ $promo->link }}" variant="dark" class="mt-4">
                         View Offer →
                     </x-btn>
                 </div>
@@ -84,14 +89,15 @@
     {{-- Category strip — promoted to prominent media tiles per audit (was a thin row of small icons) --}}
     <div class="bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Yamaha Range</p>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-                @foreach([
+                @foreach(\App\Support\YamahaDivisions::filterVisible([
                     'road'       => 'Road',
                     'off-road'   => 'Off Road',
                     'atv-rov'    => 'ATV / ROV',
                     'watercraft' => 'Watercraft',
                     'golf-car'   => 'Golf',
-                ] as $slug => $label)
+                ]) as $slug => $label)
                 <x-media-tile
                     href="{{ route('yamaha.group', $slug) }}"
                     image="{{ $groupPreviews[$slug]['image'] ?? null }}"
@@ -101,6 +107,21 @@
                     ratio="16/10" />
                 @endforeach
             </div>
+
+            @if(!empty($hondaCategoryPreviews))
+            <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mt-5 mb-2">Honda Range</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+                @foreach($hondaCategoryPreviews as $slug => $preview)
+                <x-media-tile
+                    href="{{ route('honda.category', $slug) }}"
+                    image="{{ $preview['image'] }}"
+                    :imageAlt="$preview['label']"
+                    label="{{ $preview['label'] }}"
+                    sublabel="View Range →"
+                    ratio="16/10" />
+                @endforeach
+            </div>
+            @endif
         </div>
     </div>
 
@@ -131,13 +152,13 @@
             <h2 class="text-3xl font-black uppercase text-white mb-10 tracking-tight">Shop by Category</h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach([
+                @foreach(\App\Support\YamahaDivisions::filterVisible([
                     'road'       => 'Road Motorcycles',
                     'off-road'   => 'Off Road',
                     'atv-rov'    => 'ATV / ROV',
                     'watercraft' => 'Watercraft',
                     'golf-car'   => 'Golf Cars',
-                ] as $slug => $label)
+                ]) as $slug => $label)
                 <x-media-tile
                     href="{{ route('yamaha.group', $slug) }}"
                     image="{{ $groupPreviews[$slug]['image'] ?? null }}"

@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Yamaha Products') — NorthStar Yamaha</title>
-    <meta name="description" content="@yield('meta_description', 'NorthStar Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
+    <title>@yield('title', 'Yamaha Products') — Star Yamaha</title>
+    <meta name="description" content="@yield('meta_description', 'Star Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     <!-- Open Graph -->
-    <meta property="og:site_name" content="NorthStar Yamaha">
+    <meta property="og:site_name" content="Star Yamaha">
     <meta property="og:locale" content="en_AU">
     <meta property="og:type" content="@yield('og_type', 'website')">
-    <meta property="og:title" content="@yield('title', 'Yamaha Products') — NorthStar Yamaha">
-    <meta property="og:description" content="@yield('meta_description', 'NorthStar Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
+    <meta property="og:title" content="@yield('title', 'Yamaha Products') — Star Yamaha">
+    <meta property="og:description" content="@yield('meta_description', 'Star Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
     <meta property="og:image" content="@yield('og_image', url('/images/star_yamaha_honda_logo.png'))">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', 'Yamaha Products') — NorthStar Yamaha">
-    <meta name="twitter:description" content="@yield('meta_description', 'NorthStar Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
+    <meta name="twitter:title" content="@yield('title', 'Yamaha Products') — Star Yamaha">
+    <meta name="twitter:description" content="@yield('meta_description', 'Star Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
     <meta name="twitter:image" content="@yield('og_image', url('/images/star_yamaha_honda_logo.png'))">
 
     <link rel="sitemap" type="application/xml" title="Sitemap" href="{{ route('sitemap') }}">
@@ -45,13 +45,13 @@
     {{-- Nav --}}
     <nav class="bg-white border-b-2 border-brand sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between" style="height: 80px;">
+            <div class="flex items-center justify-between" style="height: 96px;">
 
                 {{-- Logo --}}
                 <a href="{{ route('yamaha.index') }}" class="flex-shrink-0 py-2">
                     <img src="/images/star_yamaha_honda_logo.png"
-                         alt="NorthStar Yamaha"
-                         style="height: 60px; width: auto;">
+                         alt="Star Yamaha"
+                         style="height: 76px; width: auto;">
                 </a>
 
                 {{-- Desktop Nav --}}
@@ -70,7 +70,7 @@
                         <div class="nav-dropdown nav-mega absolute top-full bg-white shadow-2xl border-t-2 border-brand z-50 py-6 px-6"
                              style="left:0;">
                             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0 2rem;">
-                                @foreach(config('yamaha_nav.groups') as $groupSlug => $g)
+                                @foreach(\App\Support\YamahaDivisions::filterVisible(config('yamaha_nav.groups')) as $groupSlug => $g)
                                 <div class="mb-4">
                                     <a href="{{ route('yamaha.group', $groupSlug) }}"
                                        class="block text-xs font-black uppercase tracking-widest text-brand mb-2 hover:text-brand-dark pb-1 border-b border-gray-100">
@@ -97,15 +97,25 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </a>
-                        <div class="nav-dropdown absolute top-full left-0 bg-white shadow-2xl border-t-2 border-brand min-w-[180px] py-2 z-50">
-                            @foreach(\Honda\Catalog\Models\HondaModel::select('category')->distinct()->pluck('category') as $hondaCategory)
-                            <a href="{{ route('honda.category', $hondaCategory) }}"
-                               class="block px-5 py-2.5 text-gray-700 hover:bg-brand-tint hover:text-brand transition-colors text-xs font-semibold uppercase tracking-wide">
-                                {{ \App\Http\Controllers\HondaController::labelForCategory($hondaCategory) }}
-                            </a>
-                            @endforeach
+                        <div class="nav-dropdown nav-mega absolute top-full left-0 bg-white shadow-2xl border-t-2 border-brand z-50 py-6 px-6">
+                            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0 2rem;">
+                                @foreach(\App\Support\HondaCategories::visibleGroups() as $hondaCategory => $group)
+                                <div class="mb-4">
+                                    <a href="{{ route('honda.category', $hondaCategory) }}"
+                                       class="block text-xs font-black uppercase tracking-widest text-brand mb-2 hover:text-brand-dark pb-1 border-b border-gray-100">
+                                        {{ $group['label'] }}
+                                    </a>
+                                    @foreach($group['subcategories'] as $subSlug => $subLabel)
+                                    <a href="{{ route('honda.subcategory', [$hondaCategory, $subSlug]) }}"
+                                       class="block py-1 text-xs font-semibold text-gray-600 hover:text-brand hover:translate-x-1 transition-all uppercase tracking-wide">
+                                        {{ $subLabel }}
+                                    </a>
+                                    @endforeach
+                                </div>
+                                @endforeach
+                            </div>
                             <a href="{{ route('honda.offers') }}"
-                               class="block px-5 py-2.5 text-brand hover:bg-brand-tint transition-colors text-xs font-semibold uppercase tracking-wide border-t border-gray-100 mt-1 pt-2.5">
+                               class="block text-brand hover:text-brand-dark transition-colors text-xs font-semibold uppercase tracking-wide border-t border-gray-100 mt-2 pt-3">
                                 Honda Offers
                             </a>
                         </div>
@@ -222,7 +232,7 @@
                 </button>
                 <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                     {{-- Level 2 — each group as its own accordion --}}
-                    @foreach(config('yamaha_nav.groups') as $groupSlug => $g)
+                    @foreach(\App\Support\YamahaDivisions::filterVisible(config('yamaha_nav.groups')) as $groupSlug => $g)
                     <div x-data="{ openGroup: false }" class="border-t border-gray-100">
                         <button @click="openGroup = !openGroup"
                                 class="flex items-center justify-between w-full px-6 py-2.5 text-sm font-black uppercase tracking-wide text-gray-700 hover:text-brand">
@@ -261,11 +271,30 @@
                     </svg>
                 </button>
                 <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                    @foreach(\Honda\Catalog\Models\HondaModel::select('category')->distinct()->pluck('category') as $hondaCategory)
-                    <a href="{{ route('honda.category', $hondaCategory) }}"
-                       class="block px-8 py-2.5 text-sm text-gray-600 hover:text-brand border-l-2 border-transparent hover:border-brand ml-4 transition-colors">
-                        {{ \App\Http\Controllers\HondaController::labelForCategory($hondaCategory) }}
-                    </a>
+                    @foreach(\App\Support\HondaCategories::visibleGroups() as $hondaCategory => $group)
+                    <div x-data="{ openGroup: false }" class="border-t border-gray-100">
+                        <button @click="openGroup = !openGroup"
+                                class="flex items-center justify-between w-full px-6 py-2.5 text-sm font-black uppercase tracking-wide text-gray-700 hover:text-brand">
+                            {{ $group['label'] }}
+                            <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openGroup ? 'rotate-180' : ''"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div x-show="openGroup" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                             class="bg-gray-50">
+                            <a href="{{ route('honda.category', $hondaCategory) }}"
+                               class="block px-10 py-2 text-sm font-semibold text-brand border-l-2 border-brand ml-6">
+                                View All {{ $group['label'] }}
+                            </a>
+                            @foreach($group['subcategories'] as $subSlug => $subLabel)
+                            <a href="{{ route('honda.subcategory', [$hondaCategory, $subSlug]) }}"
+                               class="block px-10 py-2 text-sm text-gray-600 hover:text-brand border-l-2 border-transparent hover:border-brand ml-6 transition-colors">
+                                {{ $subLabel }}
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
                     @endforeach
                     <a href="{{ route('honda.offers') }}"
                        class="block px-8 py-2.5 text-sm text-brand font-semibold border-l-2 border-transparent hover:border-brand ml-4 transition-colors">
@@ -362,12 +391,12 @@
             {{-- Brand row — full width --}}
             <div class="mb-10">
                 <div class="inline-block bg-white rounded-md px-3 py-2 mb-4">
-                    <img src="/images/star_yamaha_honda_logo.png" alt="NorthStar Yamaha" class="h-[46px] w-auto block">
+                    <img src="/images/star_yamaha_honda_logo.png" alt="Star Yamaha" class="h-[46px] w-auto block">
                 </div>
                 <p class="text-sm mb-0.5">Authorised Yamaha Motor Dealer</p>
-                <a href="https://northstarmotorcycles.com.au"
+                <a href="https://staryamaha.com.au"
                    class="text-brand text-sm hover:text-brand-line transition-colors">
-                    northstarmotorcycles.com.au →
+                    staryamaha.com.au →
                 </a>
                 <p class="text-xs text-gray-500 mt-3 leading-relaxed">
                     Pricing shown is the manufacturer's RRP including GST. Contact us for your ride-away price.
@@ -381,7 +410,7 @@
                 <div>
                     <p class="text-white font-black text-[0.7rem] uppercase tracking-[0.15em] mb-4 pb-2 border-b border-gray-800">Product Range</p>
                     <div class="flex flex-col gap-2.5 text-sm">
-                        @foreach(config('yamaha_nav.groups') as $slug => $g)
+                        @foreach(\App\Support\YamahaDivisions::filterVisible(config('yamaha_nav.groups')) as $slug => $g)
                         <a href="{{ route('yamaha.group', $slug) }}" class="text-gray-400 hover:text-white transition-colors">
                             {{ $g['label'] }}
                         </a>
@@ -395,7 +424,7 @@
                     <div class="flex flex-col gap-2.5 text-sm">
                         <a href="{{ route('yamaha.parts-finder') }}" class="text-gray-400 hover:text-white transition-colors">Parts Finder</a>
                         <a href="{{ route('yamaha.shop-parts') }}" class="text-gray-400 hover:text-white transition-colors">Shop Accessories</a>
-                        <a href="https://shop.northstaryamaha.com.au/cms/page/road-gear#content" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors">Road Gear</a>
+                        <a href="https://shop.staryamaha.com.au/cms/page/road-gear#content" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors">Road Gear</a>
                     </div>
                 </div>
 
@@ -463,7 +492,7 @@
             </div>
 
             <div class="border-t border-gray-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-                <span>© {{ date('Y') }} NorthStar Yamaha. All rights reserved.</span>
+                <span>© {{ date('Y') }} Star Yamaha. All rights reserved.</span>
                 <div class="flex flex-wrap gap-4 justify-center">
                     <a href="{{ route('yamaha.privacy') }}" class="hover:text-gray-300 transition-colors">Privacy Policy</a>
                     <a href="{{ route('yamaha.returns') }}" class="hover:text-gray-300 transition-colors">Returns &amp; Exchanges</a>

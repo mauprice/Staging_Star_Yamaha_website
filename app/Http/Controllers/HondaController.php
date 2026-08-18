@@ -31,7 +31,9 @@ class HondaController extends Controller
 
     public function index(): View
     {
-        $categories = HondaModel::select('category')->distinct()->pluck('category');
+        $categories = HondaModel::select('category')->distinct()->pluck('category')
+            ->filter(fn (string $cat) => \App\Support\HondaCategories::isVisible($cat))
+            ->values();
 
         $categoryPreviews = [];
         foreach ($categories as $cat) {

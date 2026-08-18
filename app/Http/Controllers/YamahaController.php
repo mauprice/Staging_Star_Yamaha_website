@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\YamahaProduct;
 use App\Models\YamahaPromotion;
+use App\Support\HondaCategories;
+use Honda\Catalog\Models\HondaModel;
+use Honda\Catalog\Models\HondaOffer;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class YamahaController extends Controller
@@ -62,8 +67,53 @@ class YamahaController extends Controller
             ->orderBy('sort_index')
             ->get();
 
+        // Admin-controlled from the "Homepage Sliders" settings page — lets the
+        // site administrator turn each promotional source on/off in the hero
+        // slider without touching the underlying data.
+        $showYamahaSlides = Setting::get('slider_show_yamaha_promotions', '1') === '1';
+        $showHondaSlides  = Setting::get('slider_show_honda_offers', '1') === '1';
+
+        // Yamaha promo images are wide banners cut for this slider, so they crop
+        // to fill it. Honda offer images are square social-tile graphics with
+        // baked-in text, so cropping them chops off the copy — those letterbox
+        // instead (see 'fit' in yamaha.index).
+        $slides = new Collection();
+
+        if ($showYamahaSlides) {
+            $slides = $slides->concat($promotions->whereNotNull('image')->map(fn (YamahaPromotion $promo) => (object) [
+                'image' => $promo->image,
+                'head'  => $promo->head,
+                'brief' => $promo->brief,
+                'type'  => $promo->type,
+                'link'  => route('yamaha.specials'),
+                'fit'   => 'cover',
+            ]));
+        }
+
+        if ($showHondaSlides) {
+            $hondaOffers = HondaOffer::whereNull('parent_id')
+                ->where('is_active', true)
+                ->where('show_in_homepage_slider', true)
+                ->whereNotNull('image_asset_id')
+                ->with('image')
+                ->orderBy('sort')
+                ->take(6)
+                ->get();
+
+            $slides = $slides->concat($hondaOffers->map(fn (HondaOffer $offer) => (object) [
+                'image' => $offer->image->url(),
+                'head'  => $offer->title,
+                'brief' => $offer->subtitle,
+                'type'  => 'Honda Offer',
+                'link'  => $offer->link_url,
+                'fit'   => 'contain',
+            ]));
+        }
+
+        $slides = $slides->values();
+
         $groupPreviews = [];
-        foreach (self::GROUP_MAP as $slug => $group) {
+        foreach (\App\Support\YamahaDivisions::filterVisible(self::GROUP_MAP) as $slug => $group) {
             $product = YamahaProduct::where('product_group', $group)
                 ->with('heroBanners')
                 ->first();
@@ -75,7 +125,18 @@ class YamahaController extends Controller
             }
         }
 
-        return view('yamaha.index', compact('promotions', 'groupPreviews'));
+        $hondaCategoryPreviews = [];
+        foreach (HondaCategories::visibleGroups() as $slug => $group) {
+            $model = HondaModel::where('category', $slug)->with('ogImage')->first();
+            if ($model) {
+                $hondaCategoryPreviews[$slug] = [
+                    'label' => $group['label'],
+                    'image' => $model->ogImage?->url(),
+                ];
+            }
+        }
+
+        return view('yamaha.index', compact('promotions', 'groupPreviews', 'hondaCategoryPreviews', 'slides'));
     }
 
     public function group(string $group): View

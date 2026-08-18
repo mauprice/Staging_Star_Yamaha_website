@@ -64,7 +64,7 @@ class SitemapController extends Controller
                 $categorySlug = 'utility';
             }
 
-            if (! $groupSlug || ! $categorySlug) {
+            if (! $groupSlug || ! $categorySlug || ! \App\Support\YamahaDivisions::isVisible($groupSlug)) {
                 continue;
             }
 
@@ -86,7 +86,7 @@ class SitemapController extends Controller
             route('yamaha.sell'),
         ];
 
-        foreach (array_keys(self::GROUP_MAP) as $groupSlug) {
+        foreach (array_keys(\App\Support\YamahaDivisions::filterVisible(self::GROUP_MAP)) as $groupSlug) {
             $staticPages[] = route('yamaha.group', $groupSlug);
             $categories    = config('yamaha_nav.groups.' . $groupSlug . '.categories', []);
             foreach (array_keys($categories) as $categorySlug) {

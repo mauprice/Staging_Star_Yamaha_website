@@ -13,6 +13,7 @@ class HondaOffer extends Model
         'parent_id', 'slug', 'title', 'subtitle', 'price_label', 'body',
         'image_asset_id', 'cta_url', 'cta_label', 'honda_model_id',
         'source_url', 'sort', 'content_hash', 'last_scraped_at', 'is_active',
+        'show_in_homepage_slider',
     ];
 
     protected function casts(): array
@@ -20,6 +21,7 @@ class HondaOffer extends Model
         return [
             'last_scraped_at' => 'datetime',
             'is_active' => 'boolean',
+            'show_in_homepage_slider' => 'boolean',
         ];
     }
 

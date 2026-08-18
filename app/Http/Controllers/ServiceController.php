@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\ServiceBookingMail;
 use App\Models\ServiceBooking;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -13,9 +14,7 @@ class ServiceController extends Controller
 {
     public function index(): View
     {
-        return view('yamaha.tyres-service', [
-            'calendarUrl' => env('GOOGLE_CALENDAR_BOOKING_URL'),
-        ]);
+        return view('yamaha.tyres-service');
     }
 
     public function store(Request $request): RedirectResponse
@@ -36,7 +35,12 @@ class ServiceController extends Controller
 
         $booking = ServiceBooking::create($data);
 
-        Mail::to(env('BOOKING_EMAIL', 'service@northstaryamaha.com.au'))
+        $notificationEmail = Setting::get(
+            'service_booking_email',
+            env('BOOKING_EMAIL', 'service@staryamaha.com.au')
+        );
+
+        Mail::to($notificationEmail)
             ->send(new ServiceBookingMail($booking));
 
         return redirect()->route('yamaha.service')

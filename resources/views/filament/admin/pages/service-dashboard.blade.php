@@ -113,7 +113,95 @@
 }
 
 .sd-link:hover { text-decoration: underline; }
+
+.sd-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 24px;
+}
+
+.sd-settings-label { flex: 1; min-width: 0; }
+
+.sd-settings-label strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #f3f4f6;
+    margin-bottom: 2px;
+}
+
+.sd-settings-label span {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.45;
+}
+
+.sd-settings-input {
+    height: 38px;
+    width: 280px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: #f9fafb;
+    font-size: 14px;
+    padding: 0 12px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.sd-settings-input:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,.15);
+}
+
+.sd-settings-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+
+.sd-settings-save:hover { background: #d97706; }
+.sd-settings-save:active { background: #b45309; }
+.sd-settings-save:disabled { opacity: .5; cursor: not-allowed; }
 </style>
+
+<div class="sd-card" style="margin-bottom: 24px;">
+    <div class="sd-card-header">Booking Notifications</div>
+    <div class="sd-settings-row">
+        <div class="sd-settings-label">
+            <strong>Notification Email</strong>
+            <span>New service booking requests are emailed to this address.</span>
+        </div>
+        <input
+            type="email"
+            wire:model="notification_email"
+            class="sd-settings-input"
+            placeholder="service@staryamaha.com.au"
+        />
+        <button
+            wire:click="saveNotificationEmail"
+            wire:loading.attr="disabled"
+            type="button"
+            class="sd-settings-save"
+        >
+            <span wire:loading.remove wire:target="saveNotificationEmail">Save</span>
+            <span wire:loading wire:target="saveNotificationEmail">Saving…</span>
+        </button>
+    </div>
+</div>
 
 <div class="sd-stats">
     <div class="sd-stat">

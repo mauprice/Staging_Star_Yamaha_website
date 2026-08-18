@@ -21,7 +21,7 @@ class YamahaSync extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPath;
 
-    protected static ?string $navigationLabel = 'Sync API Data';
+    protected static ?string $navigationLabel = 'Sync Yamaha API Data';
 
     protected static ?string $title = 'Yamaha API Sync';
 
