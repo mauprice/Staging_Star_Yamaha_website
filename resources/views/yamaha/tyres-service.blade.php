@@ -199,7 +199,7 @@
                             </svg>
                             <div>
                                 <p class="font-semibold">Email</p>
-                                <a href="mailto:service@staryamaha.com.au" class="text-brand hover:text-brand-dark break-all">service@staryamaha.com.au</a>
+                                <a href="mailto:info@staryamaha.com.au" class="text-brand hover:text-brand-dark break-all">info@staryamaha.com.au</a>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">

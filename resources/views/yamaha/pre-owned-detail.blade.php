@@ -94,7 +94,7 @@
                 <div class="rounded-xl p-6 text-white bg-accent">
                     <h3 class="font-black text-base uppercase mb-1">Interested?</h3>
                     <p class="text-blue-100/80 text-sm mb-4">Contact our team to arrange an inspection or test ride.</p>
-                    <a href="mailto:sales@staryamaha.com.au?subject=Pre-Owned Enquiry: {{ $listing->title }}"
+                    <a href="mailto:info@staryamaha.com.au?subject=Pre-Owned Enquiry: {{ $listing->title }}"
                        class="block text-center font-black py-3 px-6 rounded-lg text-white mb-2 transition bg-brand hover:bg-brand-dark">
                         Email Enquiry
                     </a>

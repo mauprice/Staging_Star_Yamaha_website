@@ -66,7 +66,7 @@
                                 <label class="block text-xs font-black uppercase tracking-wide text-gray-600 mb-1">Suburb *</label>
                                 <input type="text" name="suburb" value="{{ old('suburb') }}" required
                                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-500"
-                                       placeholder="North Lakes">
+                                       placeholder="Jimboomba">
                             </div>
                         </div>
                     </fieldset>
