@@ -31,6 +31,16 @@
             @endif
         </div>
         <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+        @elseif($syncProgress['failed'] ?? false)
+        {{-- Failed sync banner --}}
+        <div style="border-radius:.75rem; border:1px solid #fecaca; background:#fef2f2; padding:1rem 1.25rem; display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem;">
+            <svg style="width:1.25rem;height:1.25rem;flex-shrink:0;color:#dc2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+            <p style="font-size:.875rem; color:#991b1b; margin:0;">
+                <strong>Sync failed:</strong> {{ $syncProgress['error'] ?? 'Unknown error.' }} Click <strong>Sync Now</strong> to try again.
+            </p>
+        </div>
         @else
         {{-- Last synced / never synced banner --}}
         <div style="border-radius:.75rem; border:1px solid {{ $lastSynced ? '#d1fae5' : '#fef3c7' }}; background:{{ $lastSynced ? '#f0fdf4' : '#fffbeb' }}; padding:1rem 1.25rem; display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem;">

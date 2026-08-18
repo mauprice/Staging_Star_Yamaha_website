@@ -29,19 +29,35 @@ class SyncYamahaProducts extends Command
 
         $this->info("Starting Yamaha product sync for {$country}...");
 
-        Cache::put('yamaha_sync_progress', [
+        $this->setProgress([
             'status'  => 'running',
             'phase'   => 'starting',
             'current' => 0,
             'total'   => 0,
             'started' => now()->toIso8601String(),
-        ], now()->addHours(2));
+        ]);
 
-        $this->syncProducts($country);
-        $this->syncPromotions($country);
-        $this->syncNews($country);
+        try {
+            $this->syncProducts($country);
+            $this->syncPromotions($country);
+            $this->syncNews($country);
+        } catch (\Throwable $e) {
+            Log::error('Yamaha sync: aborted with unhandled exception', ['error' => $e->getMessage()]);
 
-        Cache::put('yamaha_sync_progress', [
+            $this->setProgress([
+                'status'  => 'failed',
+                'phase'   => 'failed',
+                'current' => 0,
+                'total'   => 0,
+                'error'   => $e->getMessage(),
+            ]);
+
+            $this->error('Sync failed: ' . $e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->setProgress([
             'status'  => 'done',
             'phase'   => 'done',
             'current' => 0,
@@ -52,6 +68,18 @@ class SyncYamahaProducts extends Command
         $this->info('Sync complete.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Every write is stamped with 'updated' so the admin UI can detect a sync
+     * that died without ever reaching a terminal state (e.g. killed by the OS)
+     * and stop showing an indefinite spinner.
+     */
+    private function setProgress(array $data, $ttl = null): void
+    {
+        Cache::put('yamaha_sync_progress', array_merge($data, [
+            'updated' => now()->toIso8601String(),
+        ]), $ttl ?? now()->addHours(2));
     }
 
     private function syncProducts(string $country): void
@@ -76,13 +104,15 @@ class SyncYamahaProducts extends Command
         $total = count($products);
         $this->info("Found {$total} products. Syncing details...");
 
-        Cache::put('yamaha_sync_progress', [
+        $started = Cache::get('yamaha_sync_progress')['started'] ?? now()->toIso8601String();
+
+        $this->setProgress([
             'status'  => 'running',
             'phase'   => 'products',
             'current' => 0,
             'total'   => $total,
-            'started' => Cache::get('yamaha_sync_progress.started', now()->toIso8601String()),
-        ], now()->addHours(2));
+            'started' => $started,
+        ]);
 
         $bar = $this->output->createProgressBar($total);
         $bar->start();
@@ -91,12 +121,16 @@ class SyncYamahaProducts extends Command
             $this->syncSingleProduct($summary, $country);
             $bar->advance();
 
-            Cache::put('yamaha_sync_progress', [
+            $this->setProgress([
                 'status'  => 'running',
                 'phase'   => 'products',
                 'current' => $i + 1,
                 'total'   => $total,
-            ], now()->addHours(2));
+            ]);
+
+            // Yamaha's API sits behind Imperva bot-protection; a brief pause between
+            // products (each of which fires 6 requests) reduces the odds of tripping it.
+            usleep(100_000);
         }
 
         $bar->finish();
@@ -301,74 +335,91 @@ class SyncYamahaProducts extends Command
     {
         $this->info('Fetching promotions...');
 
-        Cache::put('yamaha_sync_progress', [
+        $this->setProgress([
             'status'  => 'running',
             'phase'   => 'promotions',
             'current' => 0,
             'total'   => 0,
-        ], now()->addHours(2));
+        ]);
 
-        $promotions = Http::timeout(30)
-            ->get("{$this->baseUrl}/GetPromotions/{$country}")
-            ->json();
+        try {
+            $promotions = Http::timeout(30)
+                ->get("{$this->baseUrl}/GetPromotions/{$country}")
+                ->json();
 
-        if (! is_array($promotions)) {
-            return;
+            if (! is_array($promotions)) {
+                return;
+            }
+
+            YamahaPromotion::where('country', $country)->delete();
+
+            foreach ($promotions as $promo) {
+                YamahaPromotion::create([
+                    'id'               => $promo['ID'],
+                    'head'             => HtmlEntityDecoder::decode($promo['Head'] ?? null),
+                    'brief'            => HtmlEntityDecoder::decode($promo['Brief'] ?? null),
+                    'brief_image'      => $promo['BriefImage'] ?? null,
+                    'full_content_url' => $promo['FullContentUrl'] ?? null,
+                    'content'          => HtmlEntityDecoder::decode($promo['Content'] ?? null),
+                    'image'            => $promo['Image'] ?? null,
+                    'type'             => $promo['Type'] ?? null,
+                    'country'          => $country,
+                    'active'           => $promo['Active'] ?? true,
+                    'sort_index'       => $promo['SortIndex'] ?? 0,
+                ]);
+            }
+
+            $this->info('Promotions synced: ' . count($promotions));
+        } catch (\Exception $e) {
+            Log::error('Yamaha sync: failed to sync promotions', ['error' => $e->getMessage()]);
+            $this->error('Failed to sync promotions: ' . $e->getMessage());
         }
-
-        YamahaPromotion::where('country', $country)->delete();
-
-        foreach ($promotions as $promo) {
-            YamahaPromotion::create([
-                'id'               => $promo['ID'],
-                'head'             => HtmlEntityDecoder::decode($promo['Head'] ?? null),
-                'brief'            => HtmlEntityDecoder::decode($promo['Brief'] ?? null),
-                'brief_image'      => $promo['BriefImage'] ?? null,
-                'full_content_url' => $promo['FullContentUrl'] ?? null,
-                'content'          => HtmlEntityDecoder::decode($promo['Content'] ?? null),
-                'image'            => $promo['Image'] ?? null,
-                'type'             => $promo['Type'] ?? null,
-                'country'          => $country,
-                'active'           => $promo['Active'] ?? true,
-                'sort_index'       => $promo['SortIndex'] ?? 0,
-            ]);
-        }
-
-        $this->info('Promotions synced: ' . count($promotions));
     }
 
     private function syncNews(string $country): void
     {
         $this->info('Fetching news & events...');
 
-        $items = Http::timeout(30)
-            ->get("{$this->baseUrl}/GetNews/{$country}")
-            ->json();
+        $this->setProgress([
+            'status'  => 'running',
+            'phase'   => 'news',
+            'current' => 0,
+            'total'   => 0,
+        ]);
 
-        if (! is_array($items)) {
-            return;
+        try {
+            $items = Http::timeout(30)
+                ->get("{$this->baseUrl}/GetNews/{$country}")
+                ->json();
+
+            if (! is_array($items)) {
+                return;
+            }
+
+            YamahaNews::where('country', $country)->delete();
+
+            foreach ($items as $item) {
+                YamahaNews::create([
+                    'id'               => $item['ID'],
+                    'head'             => HtmlEntityDecoder::decode($item['Head'] ?? null),
+                    'brief'            => HtmlEntityDecoder::decode($item['Brief'] ?? null),
+                    'brief_image'      => isset($item['BriefImage']) ? trim($item['BriefImage']) : null,
+                    'full_content_url' => $item['FullContentUrl'] ?? null,
+                    'content'          => HtmlEntityDecoder::decode($item['Content'] ?? null),
+                    'image'            => isset($item['Image']) ? trim($item['Image']) : null,
+                    'image_options'    => $item['ImageOptions'] ?? null,
+                    'type'             => HtmlEntityDecoder::decode($item['Type'] ?? null),
+                    'other_types'      => $item['OtherTypes'] ?? null,
+                    'country'          => $country,
+                    'active'           => $item['Active'] ?? true,
+                    'sort_index'       => $item['SortIndex'] ?? 0,
+                ]);
+            }
+
+            $this->info('News & events synced: ' . count($items));
+        } catch (\Exception $e) {
+            Log::error('Yamaha sync: failed to sync news', ['error' => $e->getMessage()]);
+            $this->error('Failed to sync news: ' . $e->getMessage());
         }
-
-        YamahaNews::where('country', $country)->delete();
-
-        foreach ($items as $item) {
-            YamahaNews::create([
-                'id'               => $item['ID'],
-                'head'             => HtmlEntityDecoder::decode($item['Head'] ?? null),
-                'brief'            => HtmlEntityDecoder::decode($item['Brief'] ?? null),
-                'brief_image'      => isset($item['BriefImage']) ? trim($item['BriefImage']) : null,
-                'full_content_url' => $item['FullContentUrl'] ?? null,
-                'content'          => HtmlEntityDecoder::decode($item['Content'] ?? null),
-                'image'            => isset($item['Image']) ? trim($item['Image']) : null,
-                'image_options'    => $item['ImageOptions'] ?? null,
-                'type'             => HtmlEntityDecoder::decode($item['Type'] ?? null),
-                'other_types'      => $item['OtherTypes'] ?? null,
-                'country'          => $country,
-                'active'           => $item['Active'] ?? true,
-                'sort_index'       => $item['SortIndex'] ?? 0,
-            ]);
-        }
-
-        $this->info('News & events synced: ' . count($items));
     }
 }

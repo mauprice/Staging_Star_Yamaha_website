@@ -118,8 +118,36 @@ class YamahaSync extends Page
     {
         $progress = Cache::get('yamaha_sync_progress');
 
-        if (! $progress || $progress['status'] !== 'running') {
-            return ['running' => false];
+        if (! $progress) {
+            return ['running' => false, 'failed' => false];
+        }
+
+        // Self-heal: if a "running" sync hasn't touched its progress cache in
+        // 10 minutes, the background process died without reaching a terminal
+        // state (killed, fatal error, etc). Treat it as failed instead of
+        // showing an indefinite spinner.
+        if ($progress['status'] === 'running' && isset($progress['updated'])) {
+            $updated = \Carbon\Carbon::parse($progress['updated']);
+
+            if ($updated->lt(now()->subMinutes(10))) {
+                return [
+                    'running' => false,
+                    'failed'  => true,
+                    'error'   => 'The sync stopped responding and was likely interrupted. Please try again.',
+                ];
+            }
+        }
+
+        if ($progress['status'] === 'failed') {
+            return [
+                'running' => false,
+                'failed'  => true,
+                'error'   => $progress['error'] ?? 'Unknown error.',
+            ];
+        }
+
+        if ($progress['status'] !== 'running') {
+            return ['running' => false, 'failed' => false];
         }
 
         $current = (int) ($progress['current'] ?? 0);
@@ -132,11 +160,13 @@ class YamahaSync extends Page
             'starting'   => 'Starting sync…',
             'products'   => "Syncing products ({$current} of {$total})",
             'promotions' => 'Syncing promotions…',
+            'news'       => 'Syncing news & events…',
             default      => 'Running…',
         };
 
         return [
             'running'  => true,
+            'failed'   => false,
             'phase'    => $phase,
             'current'  => $current,
             'total'    => $total,
