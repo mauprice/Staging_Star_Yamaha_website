@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->string('size')->nullable();
-            $table->string('colour')->nullable();
-            $table->string('barcode')->nullable()->unique();
+            $table->string('size', 20)->nullable();
+            $table->string('colour', 30)->nullable();
+            $table->string('barcode', 50)->nullable()->unique();
             $table->unsignedInteger('quantity')->default(0);
             $table->decimal('price_override', 10, 2)->nullable();
             $table->boolean('active')->default(true);

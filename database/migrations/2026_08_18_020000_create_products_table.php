@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('category');
+            $table->string('category', 50);
             $table->string('brand')->nullable();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('part_number')->nullable();
-            $table->string('barcode')->nullable()->unique();
+            $table->string('barcode', 50)->nullable()->unique();
             $table->decimal('price', 10, 2);
             $table->decimal('weight_kg', 8, 3)->nullable();
             $table->unsignedInteger('length_mm')->nullable();

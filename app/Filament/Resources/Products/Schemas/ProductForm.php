@@ -56,6 +56,7 @@ class ProductForm
                             ->label('Generic Part Number'),
                         TextInput::make('barcode')
                             ->label('Barcode')
+                            ->maxLength(50)
                             ->unique(ignoreRecord: true)
                             ->visible(fn (Get $get) => ! in_array($get('category'), Product::CLOTHING_CATEGORIES, true))
                             ->helperText('Leave blank if this product has size/colour variants below — each variant gets its own barcode.'),
@@ -150,12 +151,15 @@ class ProductForm
                             ->schema([
                                 TextInput::make('size')
                                     ->required()
+                                    ->maxLength(20)
                                     ->placeholder('M'),
                                 TextInput::make('colour')
                                     ->required()
+                                    ->maxLength(30)
                                     ->placeholder('Black'),
                                 TextInput::make('barcode')
                                     ->required()
+                                    ->maxLength(50)
                                     ->distinct()
                                     ->unique(ignoreRecord: true),
                                 TextInput::make('quantity')
