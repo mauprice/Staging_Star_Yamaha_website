@@ -8,6 +8,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceBookingReplyController;
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SpecialController;
 use App\Http\Controllers\YamahaController;
 use Illuminate\Support\Facades\Route;
@@ -94,9 +95,12 @@ Route::prefix('api/parts-catalogue')->name('api.parts-catalogue.')->group(functi
     Route::get('/parts/search', [PartsCatalogueController::class, 'searchParts'])->name('parts.search');
 });
 
-Route::get('/shop-parts', function () {
-    return view('yamaha.shop-parts');
-})->name('yamaha.shop-parts');
+Route::prefix('shop')->name('yamaha.shop.')->group(function () {
+    Route::get('/', [ShopController::class, 'index'])->name('index');
+    Route::get('/{id}-{slug}', [ShopController::class, 'show'])->where('id', '[0-9]+')->name('show');
+});
+
+Route::redirect('/shop-parts', '/shop', 301);
 
 Route::get('/news', [NewsController::class, 'index'])->name('yamaha.news');
 Route::get('/news/{id}-{slug}', [NewsController::class, 'show'])->name('yamaha.news.show');

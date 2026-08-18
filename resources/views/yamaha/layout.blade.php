@@ -201,7 +201,7 @@
                         Parts Finder
                     </a>
 
-                    <a href="{{ route('yamaha.shop-parts') }}"
+                    <a href="{{ route('yamaha.shop.index') }}"
                        class="flex items-center px-3 h-full text-white bg-brand hover:bg-brand-dark transition-colors font-black text-center leading-tight">
                         Shop<br>Accessories
                     </a>
@@ -331,7 +331,7 @@
                    class="flex items-center justify-between px-4 py-3 font-black text-sm uppercase tracking-wide text-brand hover:text-brand-dark">
                     Specials
                 </a>
-                <a href="{{ route('yamaha.shop-parts') }}"
+                <a href="{{ route('yamaha.shop.index') }}"
                    class="flex items-center justify-between px-4 py-3 font-black text-sm uppercase tracking-wide text-brand hover:text-brand-dark">
                     Shop Accessories
                 </a>
@@ -423,7 +423,7 @@
                     <p class="text-white font-black text-[0.7rem] uppercase tracking-[0.15em] mb-4 pb-2 border-b border-gray-800">Parts & Shop</p>
                     <div class="flex flex-col gap-2.5 text-sm">
                         <a href="{{ route('yamaha.parts-finder') }}" class="text-gray-400 hover:text-white transition-colors">Parts Finder</a>
-                        <a href="{{ route('yamaha.shop-parts') }}" class="text-gray-400 hover:text-white transition-colors">Shop Accessories</a>
+                        <a href="{{ route('yamaha.shop.index') }}" class="text-gray-400 hover:text-white transition-colors">Shop Accessories</a>
                         <a href="https://shop.staryamaha.com.au/cms/page/road-gear#content" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors">Road Gear</a>
                     </div>
                 </div>
