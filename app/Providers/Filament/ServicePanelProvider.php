@@ -31,7 +31,7 @@ class ServicePanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->maxContentWidth(Width::Full)
-            ->brandName('NorthStar Yamaha — Service')
+            ->brandName('Star Yamaha — Service')
             ->resources([
                 ServiceBookingResource::class,
             ])

@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Honda Offers')
-@section('meta_description', 'Current Honda motorcycle offers and promotions at NorthStar — finance deals, model runout pricing and more from your authorised Honda dealer.')
+@section('meta_description', 'Current Honda motorcycle offers and promotions at Star Yamaha — finance deals, model runout pricing and more from your authorised Honda dealer.')
 
 @section('content')
 

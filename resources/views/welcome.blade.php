@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Northstar Yamaha</title>
+    <title>Star Yamaha</title>
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -197,7 +197,7 @@
                 />
             </svg>
             <div class="logo-text-wrap">
-                <span class="brand-name">Northstar</span>
+                <span class="brand-name">Star</span>
                 <span class="brand-sub">Yamaha</span>
             </div>
         </div>
@@ -239,7 +239,7 @@
     </div>
 
     <div class="footer-bar">
-        &copy; {{ date('Y') }} Northstar Yamaha. All rights reserved.
+        &copy; {{ date('Y') }} Star Yamaha. All rights reserved.
     </div>
 
 </body>

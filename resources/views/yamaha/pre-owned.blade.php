@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Pre-Owned Vehicles')
-@section('meta_description', 'Browse quality pre-owned motorcycles and powersports vehicles at NorthStar Yamaha. All vehicles inspected and priced to sell.')
+@section('meta_description', 'Browse quality pre-owned motorcycles and powersports vehicles at Star Yamaha. All vehicles inspected and priced to sell.')
 
 @section('content')
 

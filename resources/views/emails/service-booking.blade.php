@@ -1,7 +1,7 @@
 <x-mail::message>
 # New Service Booking Request
 
-A customer has submitted a service booking via the NorthStar Yamaha website.
+A customer has submitted a service booking via the Star Yamaha website.
 
 ---
 
@@ -41,5 +41,5 @@ Open Booking & Send Reply
 </x-mail::button>
 
 Thanks,
-NorthStar Yamaha Website
+Star Yamaha Website
 </x-mail::message>

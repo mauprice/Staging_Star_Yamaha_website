@@ -12,7 +12,7 @@
     width: 100%;
 ">
     <iframe
-        src="https://shop.northstaryamaha.com.au/partFinder/fiche/yamaha"
+        src="https://shop.staryamaha.com.au/partFinder/fiche/yamaha"
         title="Yamaha Parts Finder"
         style="
             position: absolute;

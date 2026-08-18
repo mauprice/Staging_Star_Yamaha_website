@@ -5,7 +5,7 @@
 {{ $product->summary_image ?? url('/images/star_yamaha_honda_logo.png') }}
 @endsection
 @section('og_type', 'product')
-@section('meta_description', $product->model_name . ' — ' . $subCategoryName . ' available at NorthStar Yamaha. View specs, colours and pricing from your authorised Yamaha dealer.')
+@section('meta_description', $product->model_name . ' — ' . $subCategoryName . ' available at Star Yamaha. View specs, colours and pricing from your authorised Yamaha dealer.')
 
 @section('content')
 
@@ -207,7 +207,7 @@
                 <div class="rounded-xl p-6 text-white bg-accent">
                     <h3 class="font-black text-lg uppercase mb-1">Interested in the {{ $product->model_name }}?</h3>
                     <p class="text-blue-100/80 text-sm mb-4">Talk to our team for your best ride-away price.</p>
-                    <a href="mailto:sales@northstaryamaha.com.au?subject=Enquiry: {{ $product->model_name }}"
+                    <a href="mailto:sales@staryamaha.com.au?subject=Enquiry: {{ $product->model_name }}"
                        class="block text-center font-black py-3 px-6 rounded-lg transition text-white bg-brand hover:bg-brand-dark">
                         Enquire Now
                     </a>

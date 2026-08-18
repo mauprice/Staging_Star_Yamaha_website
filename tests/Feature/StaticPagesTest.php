@@ -28,7 +28,7 @@ class StaticPagesTest extends TestCase
 
     public function test_about_us_contains_dealership_name(): void
     {
-        $this->get('/about-us')->assertSee('NorthStar Yamaha');
+        $this->get('/about-us')->assertSee('Star Yamaha');
     }
 
     public function test_about_us_contains_address(): void

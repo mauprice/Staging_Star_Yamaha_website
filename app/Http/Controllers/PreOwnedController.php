@@ -51,7 +51,7 @@ class PreOwnedController extends Controller
             'message'       => 'nullable|string|max:1500',
         ]);
 
-        Mail::to(env('BOOKING_EMAIL', 'sales@northstaryamaha.com.au'))
+        Mail::to(env('BOOKING_EMAIL', 'sales@staryamaha.com.au'))
             ->send(new SellMyBikeMail($data));
 
         return redirect()->route('yamaha.sell')

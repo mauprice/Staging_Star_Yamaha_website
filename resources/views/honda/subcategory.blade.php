@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', $subcategoryLabel . ' — ' . $categoryLabel . ' — Honda')
-@section('meta_description', 'Shop the Honda ' . $subcategoryLabel . ' range at NorthStar. Compare models, specs and pricing from your authorised dealer.')
+@section('meta_description', 'Shop the Honda ' . $subcategoryLabel . ' range at Star Yamaha. Compare models, specs and pricing from your authorised dealer.')
 
 @section('content')
 

@@ -9,7 +9,7 @@
         <p style="margin:0; font-size:0.8rem; color:#92400e; font-weight:600;">
             <strong>Note:</strong> Due to browser security settings, your cart may not carry over when browsing here. To checkout, use the button to open the shop directly.
         </p>
-        <a href="https://shop.northstaryamaha.com.au" target="_blank" rel="noopener"
+        <a href="https://shop.staryamaha.com.au" target="_blank" rel="noopener"
            style="background:#e85c24; color:#fff; font-weight:800; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em; padding:8px 16px; border-radius:6px; text-decoration:none; white-space:nowrap; flex-shrink:0;">
             Open Shop &amp; Checkout →
         </a>
@@ -21,7 +21,7 @@
         width: 100%;
     ">
         <iframe
-            src="https://shop.northstaryamaha.com.au/cms/page/road-gear#content"
+            src="https://shop.staryamaha.com.au/cms/page/road-gear#content"
             title="Shop Yamaha Parts & Accessories"
             style="
                 position: absolute;

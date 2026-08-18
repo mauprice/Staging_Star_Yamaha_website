@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', $groupName)
-@section('meta_description', 'Browse the full Yamaha ' . $groupName . ' range at NorthStar Yamaha. Explore models, specs and pricing from your authorised Yamaha dealer.')
+@section('meta_description', 'Browse the full Yamaha ' . $groupName . ' range at Star Yamaha. Explore models, specs and pricing from your authorised Yamaha dealer.')
 
 @section('content')
 

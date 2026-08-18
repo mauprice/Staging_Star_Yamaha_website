@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Sell My Bike')
-@section('meta_description', 'Looking to sell your bike? NorthStar Yamaha buys quality used motorcycles and powersports vehicles. Get in touch for a fast, fair valuation.')
+@section('meta_description', 'Looking to sell your bike? Star Yamaha buys quality used motorcycles and powersports vehicles. Get in touch for a fast, fair valuation.')
 
 @section('content')
 

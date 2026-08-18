@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', ucwords(strtolower($divisionName)))
-@section('meta_description', 'Browse the Yamaha ' . $divisionName . ' range at NorthStar Yamaha. Models, specs and pricing from your authorised Yamaha dealer.')
+@section('meta_description', 'Browse the Yamaha ' . $divisionName . ' range at Star Yamaha. Models, specs and pricing from your authorised Yamaha dealer.')
 
 @section('content')
 

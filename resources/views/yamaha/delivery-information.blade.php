@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Delivery Information')
-@section('meta_description', 'NorthStar Yamaha delivery information — shipping rates, timeframes and stock availability.')
+@section('meta_description', 'Star Yamaha delivery information — shipping rates, timeframes and stock availability.')
 @section('canonical', url('/delivery-information'))
 
 @section('content')

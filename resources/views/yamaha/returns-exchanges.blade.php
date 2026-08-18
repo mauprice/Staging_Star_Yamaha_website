@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Returns & Exchanges')
-@section('meta_description', 'NorthStar Yamaha returns and exchanges policy — conditions, warranty returns and how to arrange a return.')
+@section('meta_description', 'Star Yamaha returns and exchanges policy — conditions, warranty returns and how to arrange a return.')
 @section('canonical', url('/returns-exchanges'))
 
 @section('content')

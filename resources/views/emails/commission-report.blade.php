@@ -25,7 +25,7 @@
 <div class="wrapper">
     <div class="header">
         <h1>Commission Report</h1>
-        <p>NorthStar Yamaha &mdash; {{ $start->format('d M Y') }} to {{ $end->format('d M Y') }}{{ $salesman ? ' &mdash; '.$salesman : '' }}</p>
+        <p>Star Yamaha &mdash; {{ $start->format('d M Y') }} to {{ $end->format('d M Y') }}{{ $salesman ? ' &mdash; '.$salesman : '' }}</p>
     </div>
     <div class="body">
         <p>Please find the commission report attached as a PDF.</p>
@@ -54,7 +54,7 @@
         <p>The full breakdown is in the attached PDF.</p>
     </div>
     <div class="footer">
-        <p>NorthStar Yamaha &bull; Generated automatically</p>
+        <p>Star Yamaha &bull; Generated automatically</p>
     </div>
 </div>
 </body>

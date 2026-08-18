@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Yamaha Motor Finance')
-@section('meta_description', 'Finance your new Yamaha with flexible payment options through NorthStar Yamaha. Low rates and easy approval — ride away sooner.')
+@section('meta_description', 'Finance your new Yamaha with flexible payment options through Star Yamaha. Low rates and easy approval — ride away sooner.')
 
 @section('content')
 

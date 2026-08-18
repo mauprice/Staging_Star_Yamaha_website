@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Yamaha Motor Insurance')
-@section('meta_description', 'Protect your ride with Yamaha Motor Insurance. Comprehensive cover for motorcycles, scooters, watercraft and more. Get a quote through NorthStar Yamaha.')
+@section('meta_description', 'Protect your ride with Yamaha Motor Insurance. Comprehensive cover for motorcycles, scooters, watercraft and more. Get a quote through Star Yamaha.')
 
 @section('content')
 

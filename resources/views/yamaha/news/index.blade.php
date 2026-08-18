@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'News & Events')
-@section('meta_description', 'Stay up to date with the latest Yamaha news, events, racing results and product launches at NorthStar Yamaha.')
+@section('meta_description', 'Stay up to date with the latest Yamaha news, events, racing results and product launches at Star Yamaha.')
 
 @section('content')
 
@@ -60,7 +60,7 @@
                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 @else
                 <div class="w-full h-full flex items-center justify-center bg-gray-100">
-                    <img src="/images/star_yamaha_honda_logo.png" alt="NorthStar Yamaha" class="h-12 opacity-30">
+                    <img src="/images/star_yamaha_honda_logo.png" alt="Star Yamaha" class="h-12 opacity-30">
                 </div>
                 @endif
 

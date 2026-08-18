@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Honda Product Range')
-@section('meta_description', 'Browse the full Honda motorcycle range at NorthStar — road, off road and work range models, specs and pricing from your authorised dealer.')
+@section('meta_description', 'Browse the full Honda motorcycle range at Star Yamaha — road, off road and work range models, specs and pricing from your authorised dealer.')
 
 @section('content')
 

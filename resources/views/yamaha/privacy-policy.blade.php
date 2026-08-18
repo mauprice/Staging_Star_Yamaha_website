@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Privacy Policy')
-@section('meta_description', 'NorthStar Yamaha privacy policy — how we collect, use and protect your personal information.')
+@section('meta_description', 'Star Yamaha privacy policy — how we collect, use and protect your personal information.')
 @section('canonical', url('/privacy-policy'))
 
 @section('content')
@@ -22,8 +22,8 @@
         <div class="prose prose-gray max-w-none text-gray-600 leading-relaxed">
 
             <p>
-                Northstar Yamaha is committed to providing you with the best possible customer experience.
-                Northstar Yamaha is bound by the Privacy Act 1988 (Cth), which sets out the principles concerning the privacy of individuals.
+                Star Yamaha is committed to providing you with the best possible customer experience.
+                Star Yamaha is bound by the Privacy Act 1988 (Cth), which sets out the principles concerning the privacy of individuals.
             </p>
 
             <h2>Collection of Your Personal Information</h2>
@@ -88,12 +88,12 @@
 
             <h2>Changes to This Privacy Policy</h2>
             <p>
-                Northstar Yamaha reserves the right to make amendments to this Privacy Policy at any time.
+                Star Yamaha reserves the right to make amendments to this Privacy Policy at any time.
                 If you have objections to the Privacy Policy, you should not access or use the site.
             </p>
 
             <h2>Contacting Us</h2>
-            <p>Northstar Yamaha welcomes your comments regarding this Privacy Policy. If you have any questions and would like further information, please contact us by any of the following means:</p>
+            <p>Star Yamaha welcomes your comments regarding this Privacy Policy. If you have any questions and would like further information, please contact us by any of the following means:</p>
             <p>
                 <strong>Business Hours</strong><br>
                 Call: <a href="{{ config('dealership.phone.href') }}">{{ config('dealership.phone.display') }}</a>

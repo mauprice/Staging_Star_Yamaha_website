@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Tyres & Service Booking')
-@section('meta_description', 'Book your motorcycle for a service or tyre fitting at NorthStar Yamaha. Expert technicians, genuine parts, and fast turnaround.')
+@section('meta_description', 'Book your motorcycle for a service or tyre fitting at Star Yamaha. Expert technicians, genuine parts, and fast turnaround.')
 
 @section('content')
 
@@ -180,33 +180,6 @@
             {{-- Sidebar --}}
             <div class="space-y-6">
 
-                {{-- Google Calendar booking --}}
-                @if($calendarUrl)
-                <div class="rounded-xl p-6 text-white bg-accent">
-                    <div class="flex items-center gap-3 mb-3">
-                        <svg class="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
-                        </svg>
-                        <div>
-                            <p class="font-black text-base">Book Online</p>
-                            <p class="text-blue-100/80 text-xs">Pick a time that suits you</p>
-                        </div>
-                    </div>
-                    <a href="{{ $calendarUrl }}" target="_blank" rel="noopener"
-                       class="block text-center font-black py-3 px-6 rounded-lg bg-white transition text-accent">
-                        Open Calendar Booking →
-                    </a>
-                </div>
-                @else
-                <div class="rounded-xl p-6 border-2 border-dashed border-gray-200 text-center">
-                    <svg class="w-10 h-10 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <p class="text-sm font-black text-gray-400 uppercase tracking-wide">Google Calendar Booking</p>
-                    <p class="text-xs text-gray-400 mt-1">Coming soon — once Google Workspace is set up, customers will be able to book directly into your calendar.</p>
-                </div>
-                @endif
-
                 {{-- Contact info --}}
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
                     <h3 class="text-xs font-black uppercase tracking-widest text-brand mb-4">Contact Service</h3>
@@ -226,7 +199,7 @@
                             </svg>
                             <div>
                                 <p class="font-semibold">Email</p>
-                                <a href="mailto:service@northstaryamaha.com.au" class="text-brand hover:text-brand-dark break-all">service@northstaryamaha.com.au</a>
+                                <a href="mailto:service@staryamaha.com.au" class="text-brand hover:text-brand-dark break-all">service@staryamaha.com.au</a>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">

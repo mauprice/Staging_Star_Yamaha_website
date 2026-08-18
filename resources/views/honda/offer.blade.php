@@ -4,7 +4,7 @@
 @section('og_image')
 {{ $offer->image?->url() ?? url('/images/star_yamaha_honda_logo.png') }}
 @endsection
-@section('meta_description', $offer->title . ' — current Honda offer at NorthStar, your authorised Honda dealer.')
+@section('meta_description', $offer->title . ' — current Honda offer at Star Yamaha, your authorised Honda dealer.')
 
 @section('content')
 

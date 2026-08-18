@@ -1,7 +1,7 @@
 @extends('yamaha.layout')
 
 @section('title', 'Specials')
-@section('meta_description', 'Browse current Yamaha special offers and deals at NorthStar Yamaha. Limited-time promotions on motorcycles, scooters, ATVs and accessories.')
+@section('meta_description', 'Browse current Yamaha special offers and deals at Star Yamaha. Limited-time promotions on motorcycles, scooters, ATVs and accessories.')
 
 @section('content')
 
@@ -82,7 +82,7 @@
                              loading="lazy">
                         @else
                         <div class="w-full h-full flex items-center justify-center bg-gray-100">
-                            <img src="/images/star_yamaha_honda_logo.png" alt="NorthStar Yamaha" class="h-12 opacity-30">
+                            <img src="/images/star_yamaha_honda_logo.png" alt="Star Yamaha" class="h-12 opacity-30">
                         </div>
                         @endif
 

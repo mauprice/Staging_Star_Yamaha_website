@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name'    => 'NorthStar Yamaha',
+    'name'    => 'Star Yamaha',
     'address' => [
         'street'   => '34 Flinders Parade',
         'suburb'   => 'North Lakes',
@@ -15,10 +15,10 @@ return [
     ],
     'fax'   => '(07) 3491 8295',
     'email' => [
-        'sales'     => 'sales@northstaryamaha.com.au',
-        'service'   => 'service@northstaryamaha.com.au',
-        'spares'    => 'spares@northstaryamaha.com.au',
-        'enquiries' => 'enquiries@northstaryamaha.com.au',
+        'sales'     => 'sales@staryamaha.com.au',
+        'service'   => 'service@staryamaha.com.au',
+        'spares'    => 'spares@staryamaha.com.au',
+        'enquiries' => 'enquiries@staryamaha.com.au',
     ],
     'hours' => [
         ['days' => 'Monday – Friday', 'hours' => '8:30am – 5:30pm', 'closed' => false],

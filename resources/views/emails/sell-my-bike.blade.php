@@ -36,5 +36,5 @@ Reply to {{ $data['name'] }}
 </x-mail::button>
 
 Thanks,
-NorthStar Yamaha Website
+Star Yamaha Website
 </x-mail::message>
