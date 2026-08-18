@@ -23,25 +23,6 @@
           </select>
         </div>
 
-        <div class="w-52">
-          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Type</label>
-          <select v-model="filters.type" @change="onFilterChange"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Types</option>
-            <option v-for="t in types" :key="t.value" :value="t.value">{{ t.label }}</option>
-          </select>
-        </div>
-
-        <div class="w-44">
-          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Catalogue</label>
-          <select v-model="filters.catalogue" @change="onFilterChange"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Catalogues</option>
-            <option value="MB">MB — Motorcycle / ATV</option>
-            <option value="MA">MA — Marine / Outboard</option>
-          </select>
-        </div>
-
         <button @click="clearFilters"
           class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           Clear
@@ -98,12 +79,8 @@
 
         <!-- Card body -->
         <div class="p-3 flex flex-col flex-1">
-          <div class="flex items-start justify-between gap-2 mb-1.5">
-            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              :class="typeClass(p.type)">
-              {{ typeName(p.type) }}
-            </span>
-            <span v-if="p.year && !p.thumbnail_url" class="text-xs font-bold text-gray-400">{{ p.year }}</span>
+          <div v-if="p.year && !p.thumbnail_url" class="flex items-start justify-end mb-1.5">
+            <span class="text-xs font-bold text-gray-400">{{ p.year }}</span>
           </div>
 
           <h3 class="font-semibold text-gray-900 text-sm leading-snug group-hover:text-blue-700 transition-colors">
@@ -157,26 +134,19 @@ const router = useRouter()
 
 const products   = ref([])
 const years      = ref([])
-const types      = ref([])
 const loading    = ref(false)
 const pagination = ref({ total: 0, current_page: 1, last_page: 1 })
 
 const filters = reactive({
-  search:    route.query.search    || '',
-  year:      route.query.year      || '',
-  type:      route.query.type      !== undefined ? route.query.type : '',
-  catalogue: route.query.catalogue || '',
+  search: route.query.search || '',
+  year:   route.query.year   || '',
 })
 
 const currentPage = ref(parseInt(route.query.page) || 1)
 
 onMounted(async () => {
-  const [y, t] = await Promise.all([
-    axios.get('/api/parts-catalogue/products/years'),
-    axios.get('/api/parts-catalogue/products/types'),
-  ])
-  years.value = y.data
-  types.value = t.data
+  const { data } = await axios.get('/api/parts-catalogue/products/years')
+  years.value = data
   fetchProducts()
 })
 
@@ -200,10 +170,8 @@ function onFilterChange() {
 }
 
 function clearFilters() {
-  filters.search    = ''
-  filters.year      = ''
-  filters.type      = ''
-  filters.catalogue = ''
+  filters.search = ''
+  filters.year   = ''
   onFilterChange()
 }
 
@@ -216,10 +184,8 @@ function goToPage(page) {
 
 function updateQuery() {
   router.replace({ query: {
-    ...(filters.search    ? { search:    filters.search }    : {}),
-    ...(filters.year      ? { year:      filters.year }      : {}),
-    ...(filters.type      !== '' ? { type:      filters.type }      : {}),
-    ...(filters.catalogue !== '' ? { catalogue: filters.catalogue } : {}),
+    ...(filters.search ? { search: filters.search } : {}),
+    ...(filters.year   ? { year:   filters.year }   : {}),
     ...(currentPage.value > 1 ? { page: currentPage.value } : {}),
   }})
 }
@@ -236,17 +202,4 @@ const pageNumbers = computed(() => {
   pages.push(total)
   return pages
 })
-
-const TYPE_LABELS = { 0: 'Motorcycle', 1: 'Outboard', 2: 'ATV', 3: 'Snowmobile', 4: 'PWC', 5: 'Boat' }
-const TYPE_CLASSES = {
-  0: 'bg-blue-100 text-blue-700',
-  1: 'bg-cyan-100 text-cyan-700',
-  2: 'bg-green-100 text-green-700',
-  3: 'bg-indigo-100 text-indigo-700',
-  4: 'bg-purple-100 text-purple-700',
-  5: 'bg-teal-100 text-teal-700',
-}
-
-function typeName(t) { return TYPE_LABELS[t] ?? 'Other' }
-function typeClass(t) { return TYPE_CLASSES[t] ?? 'bg-gray-100 text-gray-600' }
 </script>

@@ -89,7 +89,6 @@ Route::get('/parts-finder{path?}', function () {
 Route::prefix('api/parts-catalogue')->name('api.parts-catalogue.')->group(function () {
     Route::get('/products', [PartsCatalogueController::class, 'products'])->name('products');
     Route::get('/products/years', [PartsCatalogueController::class, 'years'])->name('products.years');
-    Route::get('/products/types', [PartsCatalogueController::class, 'types'])->name('products.types');
     Route::get('/products/{id}', [PartsCatalogueController::class, 'show'])->name('products.show');
     Route::get('/assemblies/{id}', [PartsCatalogueController::class, 'showAssembly'])->name('assemblies.show');
     Route::get('/parts/search', [PartsCatalogueController::class, 'searchParts'])->name('parts.search');

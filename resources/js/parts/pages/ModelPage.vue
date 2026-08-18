@@ -16,12 +16,8 @@
       <!-- Model header -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 flex items-start justify-between gap-4">
         <div>
-          <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              :class="typeClass(product.type)">
-              {{ typeName(product.type) }}
-            </span>
-            <span v-if="product.year" class="text-sm font-bold text-gray-500">{{ product.year }}</span>
+          <div v-if="product.year" class="mb-2">
+            <span class="text-sm font-bold text-gray-500">{{ product.year }}</span>
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{{ product.model }}</h1>
           <p v-if="product.common_name" class="text-gray-500 mt-1">{{ product.common_name }}</p>
@@ -90,17 +86,4 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-const TYPE_LABELS  = { 0: 'Motorcycle', 1: 'Outboard', 2: 'ATV', 3: 'Snowmobile', 4: 'PWC', 5: 'Boat' }
-const TYPE_CLASSES = {
-  0: 'bg-blue-100 text-blue-700',
-  1: 'bg-cyan-100 text-cyan-700',
-  2: 'bg-green-100 text-green-700',
-  3: 'bg-indigo-100 text-indigo-700',
-  4: 'bg-purple-100 text-purple-700',
-  5: 'bg-teal-100 text-teal-700',
-}
-
-function typeName(t) { return TYPE_LABELS[t] ?? 'Other' }
-function typeClass(t) { return TYPE_CLASSES[t] ?? 'bg-gray-100 text-gray-600' }
 </script>

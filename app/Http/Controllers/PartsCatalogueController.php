@@ -11,9 +11,14 @@ use Yamaha\Parts\Models\Product;
 
 class PartsCatalogueController extends Controller
 {
+    // Star Yamaha only sells motorcycles — the wider YPIC catalogue this data
+    // is sourced from also covers outboards, PWCs, etc. (catalogue 'MA'),
+    // which are irrelevant here and hard-excluded everywhere below.
+    private const MOTORCYCLE_TYPE = 0;
+
     public function products(Request $request): JsonResponse
     {
-        $query = Product::query();
+        $query = Product::query()->where('type', self::MOTORCYCLE_TYPE);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -26,14 +31,6 @@ class PartsCatalogueController extends Controller
 
         if ($request->filled('year')) {
             $query->where('year', $request->input('year'));
-        }
-
-        if ($request->filled('type') && $request->input('type') !== '') {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->filled('catalogue')) {
-            $query->where('catalogue', strtoupper($request->input('catalogue')));
         }
 
         $products = $query->orderBy('model')
@@ -52,7 +49,9 @@ class PartsCatalogueController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $product = Product::with(['contents.assemblies'])->findOrFail($id);
+        $product = Product::where('type', self::MOTORCYCLE_TYPE)
+            ->with(['contents.assemblies'])
+            ->findOrFail($id);
 
         return response()->json([
             'product' => $product,
@@ -62,7 +61,8 @@ class PartsCatalogueController extends Controller
 
     public function years(): JsonResponse
     {
-        $years = Product::select('year')
+        $years = Product::where('type', self::MOTORCYCLE_TYPE)
+            ->select('year')
             ->whereNotNull('year')
             ->where('year', '!=', '')
             ->distinct()
@@ -72,31 +72,11 @@ class PartsCatalogueController extends Controller
         return response()->json($years);
     }
 
-    public function types(): JsonResponse
-    {
-        $types = Product::select('type')
-            ->distinct()
-            ->orderBy('type')
-            ->pluck('type')
-            ->map(fn ($t) => [
-                'value' => $t,
-                'label' => match ($t) {
-                    0 => 'Motorcycle',
-                    1 => 'Outboard Motor',
-                    2 => 'ATV / Side-by-Side',
-                    3 => 'Snowmobile',
-                    4 => 'Personal Watercraft',
-                    5 => 'Boat',
-                    default => 'Other',
-                },
-            ]);
-
-        return response()->json($types);
-    }
-
     public function showAssembly(int $id): JsonResponse
     {
-        $assembly = Assembly::with(['content.product', 'assemblyImages.image'])->findOrFail($id);
+        $assembly = Assembly::whereHas('content.product', fn ($q) => $q->where('type', self::MOTORCYCLE_TYPE))
+            ->with(['content.product', 'assemblyImages.image'])
+            ->findOrFail($id);
 
         $rawParts = $assembly->allParts()->orderBy('image_ref_no')->get();
 
@@ -158,9 +138,12 @@ class PartsCatalogueController extends Controller
 
         $q = trim($request->input('q'));
 
-        $rawParts = Part::where('search_part_no', 'like', '%'.preg_replace('/[^A-Za-z0-9]/', '', $q).'%')
-            ->orWhere('number', 'like', "%{$q}%")
-            ->orWhere('desc', 'like', "%{$q}%")
+        $rawParts = Part::where(function ($query) use ($q) {
+                $query->where('search_part_no', 'like', '%'.preg_replace('/[^A-Za-z0-9]/', '', $q).'%')
+                    ->orWhere('number', 'like', "%{$q}%")
+                    ->orWhere('desc', 'like', "%{$q}%");
+            })
+            ->whereHas('assembly.content.product', fn ($query) => $query->where('type', self::MOTORCYCLE_TYPE))
             ->with(['assembly.content.product'])
             ->limit(50)
             ->get();
