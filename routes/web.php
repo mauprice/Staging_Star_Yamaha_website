@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
@@ -101,6 +102,13 @@ Route::prefix('shop')->name('yamaha.shop.')->group(function () {
 });
 
 Route::redirect('/shop-parts', '/shop', 301);
+
+Route::prefix('cart')->name('yamaha.cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('index');
+    Route::post('/add', [CartController::class, 'store'])->name('add');
+    Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
+    Route::delete('/{cartItem}', [CartController::class, 'destroy'])->name('destroy');
+});
 
 Route::get('/news', [NewsController::class, 'index'])->name('yamaha.news');
 Route::get('/news/{id}-{slug}', [NewsController::class, 'show'])->name('yamaha.news.show');

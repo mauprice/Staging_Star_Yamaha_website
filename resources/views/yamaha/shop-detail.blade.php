@@ -81,24 +81,29 @@
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
                     <span class="text-xs text-gray-400 font-semibold uppercase">{{ $product->category }}</span>
 
-                    <p class="text-4xl font-black text-brand mt-1 mb-4" id="display-price">
-                        @if($product->isClothing())
-                            From ${{ number_format($product->price, 2) }}
-                        @else
-                            ${{ number_format($product->price, 2) }}
-                        @endif
-                    </p>
-
                     @if($product->isClothing())
                         @if($product->variants->isEmpty())
+                        <p class="text-4xl font-black text-brand mt-1 mb-4">From ${{ number_format($product->price, 2) }}</p>
                         <p class="text-sm text-red-500 font-semibold">Currently unavailable — no sizes in stock.</p>
                         @else
-                        <div id="variant-picker" data-variants="{{ $product->variants->map(fn($v) => [
-                            'id' => $v->id, 'size' => $v->size, 'colour' => $v->colour,
-                            'price' => $v->effective_price, 'quantity' => $v->quantity,
-                        ])->toJson() }}">
+                        <div x-data="{
+                                variants: @js($product->variants->map(fn ($v) => ['id' => $v->id, 'size' => $v->size, 'colour' => $v->colour, 'price' => (float) $v->effective_price, 'quantity' => $v->quantity])),
+                                size: '', colour: '', quantity: 1, adding: false, added: false,
+                                get selected() { return this.variants.find(v => v.size === this.size && v.colour === this.colour) ?? null },
+                                get canAdd() { return this.selected && this.selected.quantity > 0 && !this.adding },
+                                async add() {
+                                    if (!this.canAdd) return;
+                                    this.adding = true;
+                                    const ok = await window.addToCart({ product_id: {{ $product->id }}, product_variant_id: this.selected.id, quantity: this.quantity }, $el);
+                                    this.adding = false;
+                                    if (ok) { this.added = true; setTimeout(() => this.added = false, 2000) }
+                                }
+                            }">
+                            <p class="text-4xl font-black text-brand mt-1 mb-4"
+                               x-text="selected ? ('$' + selected.price.toFixed(2)) : 'From ${{ number_format($product->price, 2) }}'"></p>
+
                             <label class="block text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Size</label>
-                            <select id="variant-size" class="w-full border border-gray-300 rounded-lg p-2.5 mb-3 text-sm">
+                            <select x-model="size" class="w-full border border-gray-300 rounded-lg p-2.5 mb-3 text-sm">
                                 <option value="">Select size</option>
                                 @foreach($product->variants->pluck('size')->unique() as $size)
                                 <option value="{{ $size }}">{{ $size }}</option>
@@ -106,61 +111,56 @@
                             </select>
 
                             <label class="block text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Colour</label>
-                            <select id="variant-colour" class="w-full border border-gray-300 rounded-lg p-2.5 mb-3 text-sm">
+                            <select x-model="colour" class="w-full border border-gray-300 rounded-lg p-2.5 mb-3 text-sm">
                                 <option value="">Select colour</option>
                                 @foreach($product->variants->pluck('colour')->unique() as $colour)
                                 <option value="{{ $colour }}">{{ $colour }}</option>
                                 @endforeach
                             </select>
 
-                            <p id="variant-stock" class="text-xs text-gray-500 mb-3 min-h-[1rem]"></p>
+                            <p class="text-xs text-gray-500 mb-3 min-h-[1rem]"
+                               x-text="selected ? (selected.quantity > 0 ? selected.quantity + ' in stock' : 'Out of stock') : ''"></p>
 
-                            {{-- Wired to cart in a later phase --}}
-                            <button type="button" disabled id="add-to-cart-btn"
-                                class="w-full bg-gray-300 text-gray-500 font-black py-3.5 rounded-lg uppercase tracking-widest text-sm cursor-not-allowed transition">
-                                Select size &amp; colour
+                            <div x-show="selected && selected.quantity > 0" x-cloak class="flex items-center gap-3 mb-4">
+                                <label class="text-xs font-black uppercase tracking-widest text-gray-500">Qty</label>
+                                <input type="number" x-model.number="quantity" min="1" :max="selected ? Math.min(selected.quantity, 99) : 1"
+                                       class="w-20 border border-gray-300 rounded-lg p-2 text-sm">
+                            </div>
+
+                            <button type="button" @click="add()" :disabled="!canAdd"
+                                class="w-full font-black py-3.5 rounded-lg uppercase tracking-widest text-sm transition"
+                                :class="canAdd ? 'bg-brand hover:bg-brand-dark text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                                <span x-show="!adding && !added" x-text="!selected ? 'Select size & colour' : (selected.quantity > 0 ? 'Add to Cart' : 'Out of Stock')"></span>
+                                <span x-show="adding" x-cloak>Adding…</span>
+                                <span x-show="added" x-cloak>✓ Added to Cart</span>
                             </button>
                         </div>
-
-                        <script>
-                            (function () {
-                                const el = document.getElementById('variant-picker');
-                                const variants = JSON.parse(el.dataset.variants);
-                                const sizeEl = document.getElementById('variant-size');
-                                const colourEl = document.getElementById('variant-colour');
-                                const stockEl = document.getElementById('variant-stock');
-                                const priceEl = document.getElementById('display-price');
-                                const btnEl = document.getElementById('add-to-cart-btn');
-
-                                function update() {
-                                    const match = variants.find(v => v.size === sizeEl.value && v.colour === colourEl.value);
-                                    if (!match) {
-                                        stockEl.textContent = '';
-                                        btnEl.textContent = 'Select size & colour';
-                                        return;
-                                    }
-                                    if (match.quantity > 0) {
-                                        stockEl.textContent = match.quantity + ' in stock';
-                                        priceEl.textContent = '$' + parseFloat(match.price).toFixed(2);
-                                        btnEl.textContent = 'Add to Cart';
-                                    } else {
-                                        stockEl.textContent = 'Out of stock';
-                                        btnEl.textContent = 'Out of Stock';
-                                    }
-                                }
-                                sizeEl.addEventListener('change', update);
-                                colourEl.addEventListener('change', update);
-                            })();
-                        </script>
                         @endif
                     @else
+                        <p class="text-4xl font-black text-brand mt-1 mb-4">${{ number_format($product->price, 2) }}</p>
                         @if($product->total_stock > 0)
-                        <p class="text-xs text-gray-500 mb-4">{{ $product->total_stock }} in stock</p>
-                        {{-- Wired to cart in a later phase --}}
-                        <button type="button" disabled
-                            class="w-full bg-gray-300 text-gray-500 font-black py-3.5 rounded-lg uppercase tracking-widest text-sm cursor-not-allowed transition">
-                            Add to Cart
-                        </button>
+                        <div x-data="{
+                                quantity: 1, adding: false, added: false,
+                                async add() {
+                                    this.adding = true;
+                                    const ok = await window.addToCart({ product_id: {{ $product->id }}, quantity: this.quantity }, $el);
+                                    this.adding = false;
+                                    if (ok) { this.added = true; setTimeout(() => this.added = false, 2000) }
+                                }
+                            }">
+                            <p class="text-xs text-gray-500 mb-3">{{ $product->total_stock }} in stock</p>
+                            <div class="flex items-center gap-3 mb-4">
+                                <label class="text-xs font-black uppercase tracking-widest text-gray-500">Qty</label>
+                                <input type="number" x-model.number="quantity" min="1" max="{{ min($product->total_stock, 99) }}"
+                                       class="w-20 border border-gray-300 rounded-lg p-2 text-sm">
+                            </div>
+                            <button type="button" @click="add()" :disabled="adding"
+                                class="w-full bg-brand hover:bg-brand-dark text-white font-black py-3.5 rounded-lg uppercase tracking-widest text-sm transition disabled:opacity-60">
+                                <span x-show="!adding && !added">Add to Cart</span>
+                                <span x-show="adding" x-cloak>Adding…</span>
+                                <span x-show="added" x-cloak>✓ Added to Cart</span>
+                            </button>
+                        </div>
                         @else
                         <p class="text-sm text-red-500 font-semibold mb-4">Out of stock</p>
                         @endif

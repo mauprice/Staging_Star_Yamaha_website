@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Yamaha Products') — Star Yamaha</title>
     <meta name="description" content="@yield('meta_description', 'Star Yamaha — authorised Yamaha dealer for motorcycles, scooters, watercraft, ATVs and more. Located in Australia.')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
@@ -27,8 +28,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script>window.__cartCount = {{ (int) ($cartCount ?? 0) }};</script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        [x-cloak] { display: none !important; }
+
         .nav-dropdown { display: none; }
         .nav-item:hover .nav-dropdown,
         .nav-item:focus-within .nav-dropdown { display: block; }
@@ -55,12 +59,12 @@
                 </a>
 
                 {{-- Desktop Nav --}}
-                <div class="hidden lg:flex items-stretch h-full text-xs font-bold uppercase tracking-wide">
+                <div class="hidden lg:flex items-stretch h-full text-xs font-bold uppercase">
 
                     {{-- Yamaha Products mega-menu --}}
                     <div class="nav-item relative flex items-center">
                         <a href="{{ route('yamaha.index') }}"
-                           class="flex items-center gap-1 px-4 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                           class="flex items-center gap-1 px-2.5 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                             Yamaha Products
                             <svg class="w-3 h-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
@@ -91,7 +95,7 @@
                     {{-- Honda Products dropdown --}}
                     <div class="nav-item relative flex items-center">
                         <a href="{{ route('honda.index') }}"
-                           class="flex items-center gap-1 px-4 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                           class="flex items-center gap-1 px-2.5 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                             Honda Products
                             <svg class="w-3 h-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
@@ -124,7 +128,7 @@
                     {{-- Pre-Owned dropdown --}}
                     <div class="nav-item relative flex items-center">
                         <a href="{{ route('yamaha.preowned') }}"
-                           class="flex items-center gap-1 px-4 h-full text-brand hover:text-brand-dark border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                           class="flex items-center gap-1 px-2.5 h-full text-brand hover:text-brand-dark border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                             Pre-Owned
                             <svg class="w-3 h-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
@@ -146,14 +150,14 @@
                     <div class="w-px bg-gray-200 my-4 mx-1"></div>
 
                     <a href="{{ route('yamaha.specials') }}"
-                       class="flex items-center px-3 h-full font-black text-brand hover:text-brand-dark border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="flex items-center px-2 h-full font-black text-brand hover:text-brand-dark border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         Specials
                     </a>
 
                     {{-- Finance dropdown (lg to xl only) --}}
                     <div class="nav-item relative flex items-center xl:hidden">
                         <a href="{{ route('yamaha.finance') }}"
-                           class="flex items-center gap-1 px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                           class="flex items-center gap-1 px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                             Finance
                             <svg class="w-3 h-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
@@ -173,40 +177,50 @@
 
                     {{-- Finance + Insurance flat links (xl+ only) --}}
                     <a href="{{ route('yamaha.finance') }}"
-                       class="hidden xl:flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="hidden xl:flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         Finance
                     </a>
                     <a href="{{ route('yamaha.insurance') }}"
-                       class="hidden xl:flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="hidden xl:flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         Insurance
                     </a>
 
                     <a href="{{ route('yamaha.service') }}"
-                       class="flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors text-center leading-tight">
+                       class="flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors text-center leading-tight">
                         Service &amp;<br>Tyres
                     </a>
 
                     <a href="{{ route('yamaha.about') }}"
-                       class="flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         About Us
                     </a>
 
                     <a href="{{ route('yamaha.news') }}"
-                       class="flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         News & Events
                     </a>
 
                     <a href="{{ route('yamaha.parts-finder') }}"
-                       class="flex items-center px-3 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
+                       class="flex items-center px-2 h-full text-gray-700 hover:text-brand border-b-2 border-transparent hover:border-brand transition-colors whitespace-nowrap">
                         Parts Finder
                     </a>
 
                     <a href="{{ route('yamaha.shop.index') }}"
-                       class="flex items-center px-3 h-full text-white bg-brand hover:bg-brand-dark transition-colors font-black text-center leading-tight">
+                       class="flex items-center px-2 h-full text-white bg-brand hover:bg-brand-dark transition-colors font-black text-center leading-tight">
                         Shop<br>Accessories
                     </a>
 
                 </div>
+
+                {{-- Cart --}}
+                <a href="{{ route('yamaha.cart.index') }}" aria-label="View cart"
+                   class="relative flex items-center p-1.5 ml-1 text-gray-700 hover:text-brand transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span x-data x-cloak x-show="$store.cart.count > 0" x-text="$store.cart.count"
+                          class="absolute top-0 right-0 bg-brand text-white text-[10px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
+                </a>
 
                 {{-- Mobile menu button --}}
                 <button id="mobile-menu-btn" class="lg:hidden p-2 text-gray-700">
