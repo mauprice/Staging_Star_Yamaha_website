@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Services\PartsPricing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,9 +39,11 @@ class PartsCatalogueController extends Controller
         $products = $query->orderBy('model')
             ->paginate($request->input('per_page', 50));
 
-        $products->through(function (Product $p) {
+        $imageBaseUrl = Setting::get('yamaha_parts_image_base_url', config('yamaha_parts.image_base_url'));
+
+        $products->through(function (Product $p) use ($imageBaseUrl) {
             $p->thumbnail_url = $p->thumbnail_image_id
-                ? 'https://parts.northstaryamaha.com.au/storage/images/'.$p->thumbnail_image_id.'.webp'
+                ? $imageBaseUrl.$p->thumbnail_image_id.'.webp'
                 : null;
 
             return $p;

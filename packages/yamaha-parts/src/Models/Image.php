@@ -2,6 +2,7 @@
 
 namespace Yamaha\Parts\Models;
 
+use App\Models\Setting;
 use Illuminate\Database\Eloquent\Model;
 
 class Image extends Model
@@ -27,7 +28,9 @@ class Image extends Model
     public function getUrlAttribute(): string
     {
         if ($this->extracted) {
-            return 'https://parts.northstaryamaha.com.au/storage/images/' . $this->image_id . '.' . $this->format;
+            $baseUrl = Setting::get('yamaha_parts_image_base_url', config('yamaha_parts.image_base_url'));
+
+            return $baseUrl . $this->image_id . '.' . $this->format;
         }
 
         return asset('images/placeholder.svg');
