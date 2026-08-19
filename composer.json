@@ -13,6 +13,7 @@
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "spatie/laravel-permission": "^8.1",
+        "stripe/stripe-php": "^21.2",
         "yamaha/parts": "@dev"
     },
     "repositories": [

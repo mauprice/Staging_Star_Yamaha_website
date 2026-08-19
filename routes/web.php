@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceBookingReplyController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SpecialController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\YamahaController;
 use Illuminate\Support\Facades\Route;
 
@@ -110,15 +113,31 @@ Route::prefix('cart')->name('yamaha.cart.')->group(function () {
     Route::delete('/{cartItem}', [CartController::class, 'destroy'])->name('destroy');
 });
 
+Route::prefix('checkout')->name('yamaha.checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/', [CheckoutController::class, 'store'])->name('store');
+    Route::get('/review', [CheckoutController::class, 'review'])->name('review');
+    Route::post('/confirm', [CheckoutController::class, 'confirm'])->name('confirm');
+    Route::get('/success', [CheckoutController::class, 'success'])->name('success');
+    Route::get('/cancel/{order}', [CheckoutController::class, 'cancel'])->name('cancel');
+    Route::post('/cancel/{order}/restore', [CheckoutController::class, 'restore'])->name('restore');
+});
+
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('yamaha.webhooks.stripe');
+
+Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
+    Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');
+    Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
+    Route::get('/orders/{order}/invoice', [AccountController::class, 'invoice'])->name('orders.invoice');
+});
+
 Route::get('/news', [NewsController::class, 'index'])->name('yamaha.news');
 Route::get('/news/{id}-{slug}', [NewsController::class, 'show'])->name('yamaha.news.show');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/index.xml', [SitemapController::class, 'index']);
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [AccountController::class, 'dashboard'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

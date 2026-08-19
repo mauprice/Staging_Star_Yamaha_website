@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\CartMerger;
+use App\Support\SafeRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,13 +24,21 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, CartMerger $cartMerger): RedirectResponse
     {
         $request->authenticate();
 
+        // Capture before regenerate() rotates the session ID, or the guest
+        // cart items (keyed on the old ID) become unreachable.
+        $oldSessionId = $request->session()->getId();
+
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $cartMerger->mergeGuestSessionIntoUser($oldSessionId, $request->user());
+
+        $redirect = SafeRedirect::resolve($request->input('redirect'));
+
+        return redirect()->intended($redirect ?? route('dashboard', absolute: false));
     }
 
     /**

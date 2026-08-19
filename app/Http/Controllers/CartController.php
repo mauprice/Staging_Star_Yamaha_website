@@ -14,7 +14,7 @@ class CartController extends Controller
 {
     public function index(): View
     {
-        $items = CartItem::forCurrentSession()
+        $items = CartItem::forCurrentCart()
             ->with(['product.heroImage', 'variant'])
             ->latest()
             ->get();
@@ -48,7 +48,7 @@ class CartController extends Controller
             return response()->json(['message' => 'This item is out of stock.'], 422);
         }
 
-        $cartItem = CartItem::forCurrentSession()
+        $cartItem = CartItem::forCurrentCart()
             ->where('product_id', $product->id)
             ->where('product_variant_id', $variant?->id)
             ->first();
@@ -60,6 +60,7 @@ class CartController extends Controller
         } else {
             CartItem::create([
                 'session_id' => session()->getId(),
+                'user_id' => auth()->id(),
                 'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
                 'quantity' => $newQuantity,
@@ -96,11 +97,15 @@ class CartController extends Controller
 
     private function authorizeOwnership(CartItem $cartItem): void
     {
-        abort_unless($cartItem->session_id === session()->getId(), 404);
+        $owned = auth()->check()
+            ? $cartItem->user_id === auth()->id()
+            : $cartItem->user_id === null && $cartItem->session_id === session()->getId();
+
+        abort_unless($owned, 404);
     }
 
     public static function currentCount(): int
     {
-        return (int) CartItem::forCurrentSession()->sum('quantity');
+        return (int) CartItem::forCurrentCart()->sum('quantity');
     }
 }

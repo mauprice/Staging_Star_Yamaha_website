@@ -84,10 +84,9 @@
                 <p class="text-3xl font-black text-brand">${{ number_format($subtotal, 2) }}</p>
                 <p class="text-xs text-gray-400 mt-1">Shipping calculated at checkout.</p>
             </div>
-            <button type="button" disabled
-                class="w-full sm:w-auto bg-gray-300 text-gray-500 font-black py-4 px-10 rounded-lg uppercase tracking-widest text-sm cursor-not-allowed">
-                Checkout — Coming Soon
-            </button>
+            <x-btn href="{{ route('yamaha.checkout.index') }}" variant="primary" class="w-full sm:w-auto py-4 px-10">
+                Checkout →
+            </x-btn>
         </div>
 
         <a href="{{ route('yamaha.shop.index') }}"
