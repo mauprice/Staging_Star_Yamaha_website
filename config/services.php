@@ -41,4 +41,13 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // PayPal checkout itself isn't built yet (see PaymentAvailability) -
+    // these are read by the admin Payment Settings page purely to show
+    // whether keys are saved, ready for whenever that gateway is added.
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+    ],
+
 ];
