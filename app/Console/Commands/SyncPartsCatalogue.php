@@ -84,38 +84,60 @@ class SyncPartsCatalogue extends Command
      * single-purpose SSH key) into the local mysql client via an OS-level pipe
      * — the parts table alone is ~1GB, so buffering the dump in PHP memory
      * isn't an option. The remote end already renames the table to
-     * yamaha_parts_{table} in the dump it emits, so no rewriting happens here.
+     * yamaha_parts_{table} in the dump it emits.
+     *
+     * The load target is a throwaway _sync_tmp table, never the live table
+     * directly: if the SSH pull or import fails partway through, the live
+     * table must be left exactly as it was. Only once the new data has fully
+     * landed does an atomic RENAME TABLE swap it in — MySQL guarantees that
+     * swap has no window where the table is missing or half-loaded.
      */
     private function syncTable(string $table): void
     {
         $ssh = config('yamaha_parts.catalogue_sync');
         $db  = config('database.connections.mysql');
 
-        DB::table("yamaha_parts_{$table}")->truncate();
+        $live = "yamaha_parts_{$table}";
+        $tmp  = "{$live}_sync_tmp";
+        $old  = "{$live}_sync_old";
 
-        // pipefail so a failed ssh export doesn't get masked by mysql exiting 0
-        // on empty input.
-        $shell = sprintf(
-            'set -o pipefail; ssh -i %s -p %s -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 %s@%s %s | mysql -h %s -P %s -u %s %s',
-            escapeshellarg($ssh['key_path']),
-            escapeshellarg((string) $ssh['port']),
-            escapeshellarg($ssh['user']),
-            escapeshellarg($ssh['host']),
-            escapeshellarg($table),
-            escapeshellarg($db['host']),
-            escapeshellarg((string) $db['port']),
-            escapeshellarg($db['username']),
-            escapeshellarg($db['database']),
-        );
+        DB::statement("DROP TABLE IF EXISTS `{$tmp}`");
+        DB::statement("CREATE TABLE `{$tmp}` LIKE `{$live}`");
 
-        $result = Process::timeout(1200)
-            ->env(['MYSQL_PWD' => $db['password']])
-            ->run(['bash', '-c', $shell]);
+        try {
+            // pipefail so a failed ssh export doesn't get masked by mysql
+            // exiting 0 on empty input. The extra sed stage retargets the
+            // dump's INSERTs from the live table name to the tmp one.
+            $shell = sprintf(
+                'set -o pipefail; ssh -i %s -p %s -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 %s@%s %s | sed %s | mysql -h %s -P %s -u %s %s',
+                escapeshellarg($ssh['key_path']),
+                escapeshellarg((string) $ssh['port']),
+                escapeshellarg($ssh['user']),
+                escapeshellarg($ssh['host']),
+                escapeshellarg($table),
+                escapeshellarg("s/\`{$live}\`/\`{$tmp}\`/g"),
+                escapeshellarg($db['host']),
+                escapeshellarg((string) $db['port']),
+                escapeshellarg($db['username']),
+                escapeshellarg($db['database']),
+            );
 
-        if (! $result->successful()) {
-            $error = trim($result->errorOutput()) ?: trim($result->output());
+            $result = Process::timeout(1200)
+                ->env(['MYSQL_PWD' => $db['password']])
+                ->run(['bash', '-c', $shell]);
 
-            throw new \RuntimeException("Failed to sync '{$table}': {$error}");
+            if (! $result->successful()) {
+                $error = trim($result->errorOutput()) ?: trim($result->output());
+
+                throw new \RuntimeException("Failed to sync '{$table}': {$error}");
+            }
+
+            DB::statement("DROP TABLE IF EXISTS `{$old}`");
+            DB::statement("RENAME TABLE `{$live}` TO `{$old}`, `{$tmp}` TO `{$live}`");
+            DB::statement("DROP TABLE IF EXISTS `{$old}`");
+        } finally {
+            // Leftover only on failure — the happy path already renamed $tmp away.
+            DB::statement("DROP TABLE IF EXISTS `{$tmp}`");
         }
     }
 
