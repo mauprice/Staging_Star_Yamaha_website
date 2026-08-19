@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PartsPricing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Yamaha\Parts\Models\Assembly;
 use Yamaha\Parts\Models\Part;
-use Yamaha\Parts\Models\Price;
 use Yamaha\Parts\Models\Product;
 
 class PartsCatalogueController extends Controller
@@ -15,6 +15,8 @@ class PartsCatalogueController extends Controller
     // is sourced from also covers outboards, PWCs, etc. (catalogue 'MA'),
     // which are irrelevant here and hard-excluded everywhere below.
     private const MOTORCYCLE_TYPE = 0;
+
+    public function __construct(private readonly PartsPricing $pricing) {}
 
     public function products(Request $request): JsonResponse
     {
@@ -81,9 +83,7 @@ class PartsCatalogueController extends Controller
         $rawParts = $assembly->allParts()->orderBy('image_ref_no')->get();
 
         $partNumbers = $rawParts->pluck('number')->filter()->unique()->values();
-        $priceMap = Price::whereIn('part_number', $partNumbers)
-            ->get(['part_number', 'rrp_cents', 'currency'])
-            ->keyBy('part_number');
+        $priceMap = $this->pricing->forNumbers($partNumbers);
 
         $parts = $rawParts->map(function (Part $p) use ($priceMap) {
             $price = $priceMap->get($p->number);
@@ -99,8 +99,8 @@ class PartsCatalogueController extends Controller
                 'img_y' => $p->img_y,
                 'parent_id' => $p->parent_id ?: null,
                 'has_child' => $p->has_child,
-                'rrp' => $price ? round($price->rrp_cents / 100, 2) : null,
-                'currency' => $price?->currency,
+                'rrp' => $price ? round($price['cents'] / 100, 2) : null,
+                'currency' => $price['currency'] ?? null,
             ];
         });
 
@@ -149,9 +149,7 @@ class PartsCatalogueController extends Controller
             ->get();
 
         $partNumbers = $rawParts->pluck('number')->filter()->unique()->values();
-        $priceMap = Price::whereIn('part_number', $partNumbers)
-            ->get(['part_number', 'rrp_cents', 'currency'])
-            ->keyBy('part_number');
+        $priceMap = $this->pricing->forNumbers($partNumbers);
 
         $parts = $rawParts->map(function (Part $p) use ($priceMap) {
             $price = $priceMap->get($p->number);
@@ -168,8 +166,8 @@ class PartsCatalogueController extends Controller
                 'model' => $p->assembly?->content?->product?->model,
                 'year' => $p->assembly?->content?->product?->year,
                 'product_id' => $p->assembly?->content?->product_id,
-                'rrp' => $price ? round($price->rrp_cents / 100, 2) : null,
-                'currency' => $price?->currency,
+                'rrp' => $price ? round($price['cents'] / 100, 2) : null,
+                'currency' => $price['currency'] ?? null,
             ];
         });
 

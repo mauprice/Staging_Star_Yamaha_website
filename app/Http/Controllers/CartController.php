@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\PartsPricing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yamaha\Parts\Models\Part;
 
 class CartController extends Controller
 {
+    private const MOTORCYCLE_TYPE = 0;
+
     public function index(): View
     {
         $items = CartItem::forCurrentCart()
@@ -63,6 +67,62 @@ class CartController extends Controller
                 'user_id' => auth()->id(),
                 'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
+                'quantity' => $newQuantity,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Added to cart.',
+            'count' => self::currentCount(),
+        ]);
+    }
+
+    /**
+     * Adds an OEM part from the parts-finder catalogue - a completely
+     * separate identity from the Shop Accessories `products` table (see
+     * CartItem::isPart()). Price is always re-derived server-side from the
+     * part number, never trusted from the client.
+     */
+    public function storePart(Request $request, PartsPricing $pricing): JsonResponse
+    {
+        $data = $request->validate([
+            'part_number' => 'required|string|max:255',
+            'quantity' => 'nullable|integer|min:1|max:99',
+        ]);
+
+        $part = Part::where('number', $data['part_number'])
+            ->whereHas('assembly.content.product', fn ($q) => $q->where('type', self::MOTORCYCLE_TYPE))
+            ->first();
+
+        abort_unless($part, 404);
+
+        $price = $pricing->forNumber($data['part_number']);
+
+        if (! $price) {
+            return response()->json([
+                'message' => "This part doesn't have a price and can't be ordered online — please contact us.",
+            ], 422);
+        }
+
+        $quantity = $data['quantity'] ?? 1;
+
+        $cartItem = CartItem::forCurrentCart()
+            ->whereNull('product_id')
+            ->where('part_number', $data['part_number'])
+            ->first();
+
+        $newQuantity = min(($cartItem->quantity ?? 0) + $quantity, 99);
+
+        if ($cartItem) {
+            $cartItem->update(['quantity' => $newQuantity]);
+        } else {
+            CartItem::create([
+                'session_id' => session()->getId(),
+                'user_id' => auth()->id(),
+                'part_number' => $data['part_number'],
+                'part_description' => $part->desc,
+                'unit_price_snapshot' => $price['cents'] / 100,
+                'currency' => $price['currency'],
                 'quantity' => $newQuantity,
             ]);
         }

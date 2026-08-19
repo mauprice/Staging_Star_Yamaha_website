@@ -36,19 +36,28 @@
             @foreach($items as $item)
             <div class="flex items-center gap-4 p-5 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
                 <div class="w-20 h-20 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    @if($item->product->heroImage)
+                    @if($item->isPart())
+                    <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"/>
+                    </svg>
+                    @elseif($item->product->heroImage)
                     <img src="{{ asset('storage/' . $item->product->heroImage->path) }}"
                          alt="{{ $item->product->name }}" class="max-w-full max-h-full object-contain">
                     @endif
                 </div>
 
                 <div class="flex-1 min-w-0">
+                    @if($item->isPart())
+                    <span class="font-black text-gray-900 text-sm">{{ $item->display_name }}</span>
+                    <span class="block text-[10px] uppercase tracking-widest font-bold text-gray-400 mt-0.5">OEM Part</span>
+                    @else
                     <a href="{{ route('yamaha.shop.show', ['id' => $item->product->id, 'slug' => $item->product->slug]) }}"
                        class="font-black text-gray-900 hover:text-brand transition text-sm">
                         {{ $item->display_name }}
                     </a>
+                    @endif
                     <p class="text-xs text-gray-400 mt-0.5">${{ number_format($item->unit_price, 2) }} each</p>
-                    @if($item->quantity > $item->available_stock)
+                    @if(!$item->isPart() && $item->quantity > $item->available_stock)
                     <p class="text-xs text-red-500 font-semibold mt-1">Only {{ $item->available_stock }} left in stock</p>
                     @endif
                 </div>

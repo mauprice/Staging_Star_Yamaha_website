@@ -266,9 +266,9 @@ class CheckoutController extends Controller
                 $order->items()->create([
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
-                    'product_name' => $item->product->name,
+                    'product_name' => $item->isPart() ? ($item->part_description ?: $item->part_number) : $item->product->name,
                     'variant_label' => $item->variant?->label,
-                    'part_number' => $item->product->part_number,
+                    'part_number' => $item->isPart() ? $item->part_number : $item->product->part_number,
                     'unit_price' => $item->unit_price,
                     'quantity' => $item->quantity,
                     'line_total' => $item->line_total,
@@ -347,17 +347,25 @@ class CheckoutController extends Controller
     private function restoreCartItems(Order $order): void
     {
         foreach ($order->items as $item) {
-            if (! $item->product_id) {
-                continue;
+            if ($item->product_id) {
+                CartItem::create([
+                    'session_id' => session()->getId(),
+                    'user_id' => auth()->id(),
+                    'product_id' => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'quantity' => $item->quantity,
+                ]);
+            } elseif ($item->part_number) {
+                CartItem::create([
+                    'session_id' => session()->getId(),
+                    'user_id' => auth()->id(),
+                    'part_number' => $item->part_number,
+                    'part_description' => $item->product_name,
+                    'unit_price_snapshot' => $item->unit_price,
+                    'currency' => $order->currency,
+                    'quantity' => $item->quantity,
+                ]);
             }
-
-            CartItem::create([
-                'session_id' => session()->getId(),
-                'user_id' => auth()->id(),
-                'product_id' => $item->product_id,
-                'product_variant_id' => $item->product_variant_id,
-                'quantity' => $item->quantity,
-            ]);
         }
     }
 }

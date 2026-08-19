@@ -40,6 +40,7 @@
             <th class="px-4 py-2 text-right w-28">Price (RRP)</th>
             <th class="px-4 py-2 text-left">Model</th>
             <th class="px-4 py-2 text-left">Assembly</th>
+            <th class="px-4 py-2 text-center w-12">Cart</th>
             <th class="px-4 py-2 w-24"></th>
           </tr>
         </thead>
@@ -71,6 +72,25 @@
               {{ r.model }}<span v-if="r.year" class="ml-1 text-gray-400">({{ r.year }})</span>
             </td>
             <td class="px-4 py-2.5 text-gray-500 text-xs">{{ r.assembly }}</td>
+            <td class="px-4 py-2.5 text-center">
+              <button
+                v-if="r.rrp != null"
+                type="button"
+                @click="addPartToCart(r, $event)"
+                :disabled="addingPartNumber === r.number"
+                class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors disabled:opacity-50"
+                :class="addedPartNumber === r.number ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'"
+                :title="addedPartNumber === r.number ? 'Added to cart' : 'Add to cart'"
+              >
+                <svg v-if="addedPartNumber !== r.number" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.972-4.665 2.53-7.032.15-.633-.324-1.243-.973-1.243H5.436m1.36 8.275L5.436 5.965M7.5 14.25L5.436 5.965M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/>
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+              </button>
+              <span v-else class="text-gray-300 text-xs">—</span>
+            </td>
             <td class="px-4 py-2.5">
               <router-link v-if="r.assembly_id" :to="`/assembly/${r.assembly_id}`"
                 class="text-xs text-blue-600 hover:underline whitespace-nowrap">
@@ -104,6 +124,9 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { useCart } from '../useCart'
+
+const { addingPartNumber, addedPartNumber, addPartToCart } = useCart()
 
 const query     = ref('')
 const results   = ref([])

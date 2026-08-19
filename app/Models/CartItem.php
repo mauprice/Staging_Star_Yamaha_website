@@ -8,9 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CartItem extends Model
 {
-    protected $fillable = ['session_id', 'user_id', 'product_id', 'product_variant_id', 'quantity'];
+    protected $fillable = [
+        'session_id', 'user_id', 'product_id', 'product_variant_id', 'quantity',
+        'part_number', 'part_description', 'unit_price_snapshot', 'currency',
+    ];
 
-    protected $casts = ['quantity' => 'integer'];
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_price_snapshot' => 'decimal:2',
+    ];
 
     public function product(): BelongsTo
     {
@@ -38,8 +44,17 @@ class CartItem extends Model
             : $query->where('session_id', session()->getId())->whereNull('user_id');
     }
 
+    public function isPart(): bool
+    {
+        return $this->product_id === null;
+    }
+
     public function getUnitPriceAttribute(): float
     {
+        if ($this->isPart()) {
+            return (float) $this->unit_price_snapshot;
+        }
+
         return (float) ($this->variant?->effective_price ?? $this->product->price);
     }
 
@@ -48,13 +63,28 @@ class CartItem extends Model
         return round($this->unit_price * $this->quantity, 2);
     }
 
+    /**
+     * OEM parts have no stock/availability data at all (see Part model) -
+     * they're treated as always orderable, capped only by the same 99-unit
+     * ceiling every cart line uses.
+     */
     public function getAvailableStockAttribute(): int
     {
+        if ($this->isPart()) {
+            return 99;
+        }
+
         return $this->variant?->quantity ?? $this->product->stock_quantity;
     }
 
     public function getDisplayNameAttribute(): string
     {
+        if ($this->isPart()) {
+            return $this->part_description
+                ? "{$this->part_number} — {$this->part_description}"
+                : $this->part_number;
+        }
+
         $name = $this->product->name;
 
         return $this->variant ? "{$name} ({$this->variant->label})" : $name;

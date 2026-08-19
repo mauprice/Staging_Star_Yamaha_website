@@ -109,6 +109,7 @@ Route::redirect('/shop-parts', '/shop', 301);
 Route::prefix('cart')->name('yamaha.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'store'])->name('add');
+    Route::post('/add-part', [CartController::class, 'storePart'])->name('add-part');
     Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
     Route::delete('/{cartItem}', [CartController::class, 'destroy'])->name('destroy');
 });

@@ -10,11 +10,11 @@ document.addEventListener('alpine:init', () => {
     });
 });
 
-window.addToCart = async function (payload, button) {
+window.addToCart = async function (payload, button, url = '/cart/add') {
     if (button) button.disabled = true;
 
     try {
-        const response = await fetch('/cart/add', {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
