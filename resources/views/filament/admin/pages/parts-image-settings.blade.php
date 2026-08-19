@@ -136,7 +136,7 @@
 }
 </style>
 
-<div class="pi-wrap">
+<div class="pi-wrap" wire:poll.10000ms>
 
     <div class="pi-card">
 
@@ -189,6 +189,88 @@
             </svg>
             <span wire:loading.remove wire:target="save">Save Settings</span>
             <span wire:loading wire:target="save">Saving…</span>
+        </button>
+    </div>
+
+    {{-- CDN Cache Warm-Up --}}
+    @php
+        $warmProgress = $this->getWarmProgress();
+        $lastWarmed = $this->getLastWarmed();
+    @endphp
+
+    <div class="pi-card" style="margin-top:24px;">
+
+        <div class="pi-card-header">
+            <h3>CDN Image Cache Warm-Up</h3>
+            <p>Requests every diagram image through the CDN ({{ rtrim($image_base_url, '/') }}) in filename sequence so it gets pulled into the edge cache ahead of real traffic.</p>
+        </div>
+
+        <div class="pi-row">
+            <div class="pi-row-label">
+                <strong>Concurrent Requests</strong>
+                <span>How many images to request at once. Higher is faster but puts more load on the CDN origin.</span>
+            </div>
+            <input
+                type="number"
+                min="1"
+                max="32"
+                wire:model.live="warm_concurrency"
+                class="pi-input"
+                style="width:120px;"
+            />
+        </div>
+
+        @if($warmProgress['running'])
+        <div class="pi-row" style="padding-top:0;">
+            <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:14px 16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:13px; font-weight:600; color:#f3f4f6;">
+                        Warming… {{ number_format($warmProgress['current']) }} / {{ number_format($warmProgress['total']) }}
+                        ({{ number_format($warmProgress['ok']) }} ok{{ $warmProgress['failedCount'] ? ', '.number_format($warmProgress['failedCount']).' failed' : '' }})
+                    </span>
+                    <span style="font-size:13px; font-weight:700; color:#f59e0b;">{{ $warmProgress['pct'] }}%</span>
+                </div>
+                <div style="background:#1e293b; border-radius:9999px; height:8px; overflow:hidden;">
+                    <div style="height:100%; border-radius:9999px; background:linear-gradient(90deg,#f59e0b,#fbbf24); width:{{ $warmProgress['pct'] }}%; transition:width .4s ease;"></div>
+                </div>
+            </div>
+        </div>
+        @elseif($warmProgress['failed'] ?? false)
+        <div class="pi-row" style="padding-top:0;">
+            <div style="border-radius:8px; border:1px solid #7f1d1d; background:rgba(220,38,38,.08); padding:12px 16px;">
+                <p style="font-size:13px; color:#fca5a5; margin:0;"><strong>Warm-up failed:</strong> {{ $warmProgress['error'] }}</p>
+            </div>
+        </div>
+        @elseif($lastWarmed)
+        <div class="pi-row" style="padding-top:0;">
+            <p style="font-size:13px; color:#6b7280; margin:0;">
+                Last run: <strong style="color:#d1d5db;">{{ $lastWarmed }}</strong>
+                @if(($warmProgress['ok'] ?? null) !== null)
+                    — {{ number_format($warmProgress['ok']) }} ok{{ ($warmProgress['failedCount'] ?? 0) ? ', '.number_format($warmProgress['failedCount']).' failed' : '' }}
+                @endif
+            </p>
+        </div>
+        @endif
+
+    </div>
+
+    <div class="pi-footer">
+        <button
+            wire:click="warmCache"
+            wire:loading.attr="disabled"
+            type="button"
+            class="pi-save-btn"
+            @if($warmProgress['running']) disabled @endif
+        >
+            <svg wire:loading.remove wire:target="warmCache" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <svg wire:loading wire:target="warmCache" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;">
+                <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <span wire:loading.remove wire:target="warmCache">{{ $warmProgress['running'] ? 'Warming…' : 'Warm Cache Now' }}</span>
+            <span wire:loading wire:target="warmCache">Starting…</span>
         </button>
     </div>
 
