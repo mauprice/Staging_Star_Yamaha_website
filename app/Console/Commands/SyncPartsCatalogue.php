@@ -115,7 +115,7 @@ class SyncPartsCatalogue extends Command
                 escapeshellarg($ssh['user']),
                 escapeshellarg($ssh['host']),
                 escapeshellarg($table),
-                escapeshellarg("s/\`{$live}\`/\`{$tmp}\`/g"),
+                escapeshellarg("s/`{$live}`/`{$tmp}`/g"),
                 escapeshellarg($db['host']),
                 escapeshellarg((string) $db['port']),
                 escapeshellarg($db['username']),
