@@ -3,6 +3,15 @@
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
       <div class="flex flex-wrap gap-3 items-end">
+        <div class="w-36">
+          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Year</label>
+          <select v-model="filters.year" @change="onFilterChange"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Years</option>
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+
         <div class="flex-1 min-w-48">
           <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Search Model</label>
           <input
@@ -12,15 +21,6 @@
             placeholder="e.g. YZF-R1, WR450F, F150…"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-        </div>
-
-        <div class="w-36">
-          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Year</label>
-          <select v-model="filters.year" @change="onFilterChange"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Years</option>
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
         </div>
 
         <button @click="clearFilters"
