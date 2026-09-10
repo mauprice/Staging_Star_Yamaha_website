@@ -6,12 +6,14 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\CheckoutController;
+use App\Services\StockService;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class OrdersTable
 {
@@ -84,12 +86,22 @@ class OrdersTable
                     ->modalHeading('Confirm bank deposit received?')
                     ->modalDescription('This marks the order as paid and clears it for shipping. Only confirm after verifying the deposit in your bank account.')
                     ->action(function ($record) {
-                        $record->update(['status' => OrderStatus::Paid, 'paid_at' => now()]);
+                        DB::transaction(function () use ($record) {
+                            $order = $record->newQuery()->lockForUpdate()->find($record->id);
 
-                        $record->payments()
-                            ->where('provider', 'bank_transfer')
-                            ->where('status', PaymentStatus::Pending)
-                            ->update(['status' => PaymentStatus::Succeeded, 'paid_at' => now()]);
+                            if ($order->status === OrderStatus::Paid) {
+                                return;
+                            }
+
+                            app(StockService::class)->decrementForOrder($order);
+
+                            $order->update(['status' => OrderStatus::Paid, 'paid_at' => now()]);
+
+                            $order->payments()
+                                ->where('provider', 'bank_transfer')
+                                ->where('status', PaymentStatus::Pending)
+                                ->update(['status' => PaymentStatus::Succeeded, 'paid_at' => now()]);
+                        });
 
                         Notification::make()
                             ->title('Order marked as paid')

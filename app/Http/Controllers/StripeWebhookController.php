@@ -9,8 +9,7 @@ use App\Mail\OrderReceiptMail;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentWebhookEvent;
-use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +20,10 @@ use Stripe\Webhook;
 
 class StripeWebhookController extends Controller
 {
+    public function __construct(private readonly StockService $stockService)
+    {
+    }
+
     public function handle(Request $request): Response
     {
         try {
@@ -51,6 +54,8 @@ class StripeWebhookController extends Controller
             'checkout.session.completed' => $this->handleCheckoutCompleted($event),
             'checkout.session.expired' => $this->handleCheckoutExpired($event),
             'checkout.session.async_payment_failed' => $this->handleAsyncPaymentFailed($event),
+            'payment_intent.succeeded' => $this->handlePaymentIntentSucceeded($event),
+            'payment_intent.payment_failed' => $this->handlePaymentIntentFailed($event),
             default => Log::info('Unhandled Stripe webhook event type', ['type' => $event->type]),
         };
 
@@ -77,31 +82,7 @@ class StripeWebhookController extends Controller
                 return $order;
             }
 
-            $conflicts = [];
-
-            foreach ($order->items()->get() as $item) {
-                if (! $item->product_id) {
-                    continue;
-                }
-
-                if ($item->product_variant_id) {
-                    $variant = ProductVariant::where('id', $item->product_variant_id)->lockForUpdate()->first();
-                    if ($variant) {
-                        if ($variant->quantity < $item->quantity) {
-                            $conflicts[] = "{$item->product_name}: needed {$item->quantity}, only {$variant->quantity} in stock";
-                        }
-                        $variant->update(['quantity' => max(0, $variant->quantity - $item->quantity)]);
-                    }
-                } else {
-                    $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
-                    if ($product) {
-                        if ($product->stock_quantity < $item->quantity) {
-                            $conflicts[] = "{$item->product_name}: needed {$item->quantity}, only {$product->stock_quantity} in stock";
-                        }
-                        $product->update(['stock_quantity' => max(0, $product->stock_quantity - $item->quantity)]);
-                    }
-                }
-            }
+            $conflicts = $this->stockService->decrementForOrder($order);
 
             $order->update([
                 'status' => OrderStatus::Paid,
@@ -163,6 +144,77 @@ class StripeWebhookController extends Controller
 
             Payment::where('provider', 'stripe')
                 ->where('provider_reference', $session->id)
+                ->update(['status' => PaymentStatus::Failed]);
+        }
+    }
+
+    /**
+     * Card-present POS sales create a PaymentIntent directly (no Checkout
+     * Session), so their result arrives here instead of via
+     * checkout.session.completed. Scoped to metadata.source=pos - Checkout
+     * Sessions create a PaymentIntent internally too, but its Payment row
+     * is keyed by the session id, not the intent id, so this lookup would
+     * no-op for those anyway; the metadata check just makes the intent explicit.
+     */
+    private function handlePaymentIntentSucceeded(Event $event): void
+    {
+        $intent = $event->data->object;
+
+        if (($intent->metadata->source ?? null) !== 'pos') {
+            return;
+        }
+
+        $orderId = $intent->metadata->order_id ?? null;
+
+        if (! $orderId) {
+            Log::error('Stripe payment_intent.succeeded (POS) missing order_id metadata', ['payment_intent_id' => $intent->id]);
+
+            return;
+        }
+
+        DB::transaction(function () use ($orderId, $intent) {
+            $order = Order::where('id', $orderId)->lockForUpdate()->first();
+
+            if (! $order || $order->status === OrderStatus::Paid) {
+                return;
+            }
+
+            $conflicts = $this->stockService->decrementForOrder($order);
+
+            $order->update([
+                'status' => OrderStatus::Paid,
+                'paid_at' => now(),
+                'notes' => $conflicts
+                    ? trim(($order->notes ? $order->notes . "\n" : '') . "STOCK CONFLICT (needs manual review):\n" . implode("\n", $conflicts))
+                    : $order->notes,
+            ]);
+
+            Payment::where('provider', 'stripe')
+                ->where('provider_reference', $intent->id)
+                ->update([
+                    'status' => PaymentStatus::Succeeded,
+                    'paid_at' => now(),
+                    'raw_response' => $intent->toArray(),
+                ]);
+        });
+    }
+
+    private function handlePaymentIntentFailed(Event $event): void
+    {
+        $intent = $event->data->object;
+
+        if (($intent->metadata->source ?? null) !== 'pos') {
+            return;
+        }
+
+        $orderId = $intent->metadata->order_id ?? null;
+        $order = $orderId ? Order::find($orderId) : null;
+
+        if ($order && $order->status === OrderStatus::PendingPayment) {
+            $order->update(['status' => OrderStatus::PaymentFailed]);
+
+            Payment::where('provider', 'stripe')
+                ->where('provider_reference', $intent->id)
                 ->update(['status' => PaymentStatus::Failed]);
         }
     }

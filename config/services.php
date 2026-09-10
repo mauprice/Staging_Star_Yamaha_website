@@ -39,6 +39,8 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'terminal_location_id' => env('STRIPE_TERMINAL_LOCATION_ID'),
+        'terminal_reader_id' => env('STRIPE_TERMINAL_READER_ID'),
     ],
 
     // PayPal checkout itself isn't built yet (see PaymentAvailability) -

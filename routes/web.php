@@ -6,6 +6,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
+use App\Http\Controllers\PosReceiptController;
 use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ProfileController;
@@ -125,6 +126,8 @@ Route::prefix('checkout')->name('yamaha.checkout.')->group(function () {
 });
 
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('yamaha.webhooks.stripe');
+
+Route::middleware('auth')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
 
 Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');

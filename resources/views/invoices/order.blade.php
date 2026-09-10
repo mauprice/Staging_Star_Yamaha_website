@@ -92,6 +92,9 @@
             <tr><td>Subtotal</td><td class="right">${{ number_format($order->subtotal, 2) }}</td></tr>
             <tr><td>Shipping</td><td class="right">${{ number_format($order->shipping_total, 2) }}</td></tr>
             <tr class="grand"><td>Total ({{ $order->currency }})</td><td class="right">${{ number_format($order->total, 2) }}</td></tr>
+            @if($order->tax_total !== null)
+            <tr><td class="muted">Includes GST</td><td class="right muted">${{ number_format($order->tax_total, 2) }}</td></tr>
+            @endif
         </table>
     </div>
 
