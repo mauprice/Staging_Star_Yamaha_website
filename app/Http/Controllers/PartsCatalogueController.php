@@ -137,16 +137,34 @@ class PartsCatalogueController extends Controller
 
     public function searchParts(Request $request): JsonResponse
     {
-        $request->validate(['q' => 'required|string|min:3']);
+        $request->validate([
+            'q' => 'required_without:category|string|min:3',
+            'category' => 'nullable|in:tyres',
+            'product_id' => 'nullable|integer',
+        ]);
 
-        $q = trim($request->input('q'));
+        $q = trim((string) $request->input('q'));
+        $category = $request->input('category');
 
-        $rawParts = Part::where(function ($query) use ($q) {
+        $rawParts = Part::where(function ($query) use ($q, $category) {
+                if ($category === 'tyres') {
+                    $query->where('desc', 'like', '%TIRE%')
+                        ->orWhere('desc', 'like', '%TYRE%');
+
+                    return;
+                }
+
                 $query->where('search_part_no', 'like', '%'.preg_replace('/[^A-Za-z0-9]/', '', $q).'%')
                     ->orWhere('number', 'like', "%{$q}%")
                     ->orWhere('desc', 'like', "%{$q}%");
             })
-            ->whereHas('assembly.content.product', fn ($query) => $query->where('type', self::MOTORCYCLE_TYPE))
+            ->whereHas('assembly.content.product', function ($query) use ($request) {
+                $query->where('type', self::MOTORCYCLE_TYPE);
+
+                if ($request->filled('product_id')) {
+                    $query->where('product_id', $request->input('product_id'));
+                }
+            })
             ->with(['assembly.content.product'])
             ->limit(50)
             ->get();

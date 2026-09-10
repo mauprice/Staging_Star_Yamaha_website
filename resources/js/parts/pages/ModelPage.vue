@@ -27,6 +27,13 @@
             <span v-if="product.cat_number"><strong>Cat:</strong> {{ product.cat_number }}</span>
           </div>
         </div>
+
+        <router-link
+          :to="{ path: '/search', query: { category: 'tyres', product_id: product.product_id, model: product.model } }"
+          class="shrink-0 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors whitespace-nowrap"
+        >
+          Tyres →
+        </router-link>
       </div>
 
       <!-- Contents -->

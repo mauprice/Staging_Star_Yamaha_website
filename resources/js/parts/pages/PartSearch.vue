@@ -3,22 +3,30 @@
     <h1 class="text-xl font-bold text-gray-800 mb-4">Part Number Search</h1>
 
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-      <div class="flex gap-3">
-        <input
-          v-model="query"
-          @keydown.enter="search"
-          type="text"
-          placeholder="Enter part number (e.g. 4WV-15100-12) or description…"
-          class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          autofocus
-        />
-        <button @click="search"
-          :disabled="loading || query.length < 3"
-          class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-          Search
-        </button>
+      <div v-if="tyreFilter" class="flex items-center gap-2 text-sm">
+        <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-medium">
+          Tyres for {{ tyreFilter.model }}
+          <button @click="clearTyreFilter" class="text-blue-400 hover:text-blue-700" title="Clear filter">✕</button>
+        </span>
       </div>
-      <p class="text-xs text-gray-400 mt-2">Minimum 3 characters. Hyphens are optional.</p>
+      <template v-else>
+        <div class="flex gap-3">
+          <input
+            v-model="query"
+            @keydown.enter="search"
+            type="text"
+            placeholder="Enter part number (e.g. 4WV-15100-12) or description…"
+            class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autofocus
+          />
+          <button @click="search"
+            :disabled="loading || query.length < 3"
+            class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            Search
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">Minimum 3 characters. Hyphens are optional.</p>
+      </template>
     </div>
 
     <!-- Loading -->
@@ -122,11 +130,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useCart } from '../useCart'
 
 const { addingPartNumber, addedPartNumber, addPartToCart } = useCart()
+const route  = useRoute()
+const router = useRouter()
 
 const query     = ref('')
 const results   = ref([])
@@ -135,18 +146,41 @@ const searched  = ref(false)
 const lastQuery = ref('')
 const copied    = ref(null)
 
+const tyreFilter = ref(route.query.category === 'tyres' ? {
+  productId: route.query.product_id,
+  model: route.query.model || 'this model',
+} : null)
+
+onMounted(() => {
+  if (tyreFilter.value) {
+    lastQuery.value = `tyres for ${tyreFilter.value.model}`
+    runSearch({ category: 'tyres', product_id: tyreFilter.value.productId })
+  }
+})
+
 async function search() {
   if (query.value.length < 3) return
+  lastQuery.value = query.value
+  await runSearch({ q: query.value })
+}
+
+async function runSearch(params) {
   loading.value  = true
   searched.value = false
-  lastQuery.value = query.value
   try {
-    const { data } = await axios.get('/api/parts-catalogue/parts/search', { params: { q: query.value } })
+    const { data } = await axios.get('/api/parts-catalogue/parts/search', { params })
     results.value  = data
     searched.value = true
   } finally {
     loading.value = false
   }
+}
+
+function clearTyreFilter() {
+  tyreFilter.value = null
+  results.value    = []
+  searched.value   = false
+  router.replace({ query: {} })
 }
 
 async function copy(number) {
