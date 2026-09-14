@@ -46,7 +46,7 @@ class ServiceDashboard extends Page
 
         $this->notification_email = Setting::get(
             'service_booking_email',
-            env('BOOKING_EMAIL', 'service@staryamaha.com.au')
+            env('BOOKING_EMAIL', 'info@staryamaha.com.au')
         );
     }
 

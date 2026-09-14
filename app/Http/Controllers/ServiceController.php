@@ -7,6 +7,7 @@ use App\Models\ServiceBooking;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -37,11 +38,19 @@ class ServiceController extends Controller
 
         $notificationEmail = Setting::get(
             'service_booking_email',
-            env('BOOKING_EMAIL', 'service@staryamaha.com.au')
+            env('BOOKING_EMAIL', 'info@staryamaha.com.au')
         );
 
-        Mail::to($notificationEmail)
-            ->send(new ServiceBookingMail($booking));
+        try {
+            Mail::to($notificationEmail)
+                ->send(new ServiceBookingMail($booking));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send service booking notification email', [
+                'booking_id' => $booking->id,
+                'to'         => $notificationEmail,
+                'error'      => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->route('yamaha.service')
             ->with('success', 'Thanks ' . $data['name'] . '! Your booking request has been sent. We\'ll be in touch shortly to confirm.');
