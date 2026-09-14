@@ -212,6 +212,45 @@
 
                 </div>
 
+                {{-- Account --}}
+                @auth
+                <div class="nav-item relative hidden lg:flex items-center flex-shrink-0">
+                    <button type="button" aria-label="Account menu"
+                            class="flex items-center p-1.5 ml-1 text-gray-700 hover:text-brand transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.879 6.196 9 9 0 015.12 17.804zM15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown absolute top-full right-0 bg-white shadow-2xl border-t-2 border-brand min-w-[200px] py-2 z-50">
+                        <div class="px-5 py-2 text-xs font-bold text-gray-400 uppercase tracking-wide border-b border-gray-100 truncate">
+                            {{ auth()->user()->name }}
+                        </div>
+                        <a href="{{ route('dashboard') }}"
+                           class="block px-5 py-2.5 text-gray-700 hover:bg-brand-tint hover:text-brand transition-colors text-xs font-semibold uppercase tracking-wide">
+                            My Account
+                        </a>
+                        <a href="{{ route('profile.edit') }}"
+                           class="block px-5 py-2.5 text-gray-700 hover:bg-brand-tint hover:text-brand transition-colors text-xs font-semibold uppercase tracking-wide">
+                            Edit Profile
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100 mt-1 pt-1">
+                            @csrf
+                            <button type="submit"
+                                    class="block w-full text-left px-5 py-2.5 text-gray-700 hover:bg-brand-tint hover:text-brand transition-colors text-xs font-semibold uppercase tracking-wide">
+                                Log Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @else
+                <a href="{{ route('login') }}" aria-label="Log in"
+                   class="hidden lg:flex items-center p-1.5 ml-1 text-gray-700 hover:text-brand transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.879 6.196 9 9 0 015.12 17.804zM15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </a>
+                @endauth
+
                 {{-- Cart --}}
                 <a href="{{ route('yamaha.cart.index') }}" aria-label="View cart"
                    class="relative flex items-center p-1.5 ml-1 text-gray-700 hover:text-brand transition-colors flex-shrink-0">
@@ -233,6 +272,28 @@
 
         {{-- Mobile Menu --}}
         <div id="mobile-menu" class="hidden lg:hidden border-t border-gray-100 bg-white max-h-screen overflow-y-auto">
+
+            {{-- Account --}}
+            <div class="border-b border-gray-100 bg-gray-50">
+                @auth
+                <div class="px-4 py-3">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 truncate">{{ auth()->user()->name }}</p>
+                    <div class="flex flex-col gap-2.5 text-sm">
+                        <a href="{{ route('dashboard') }}" class="font-black uppercase tracking-wide text-gray-900 hover:text-brand transition-colors">My Account</a>
+                        <a href="{{ route('profile.edit') }}" class="font-black uppercase tracking-wide text-gray-900 hover:text-brand transition-colors">Edit Profile</a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="font-black uppercase tracking-wide text-brand hover:text-brand-dark transition-colors">Log Out</button>
+                        </form>
+                    </div>
+                </div>
+                @else
+                <div class="px-4 py-3 flex gap-4">
+                    <a href="{{ route('login') }}" class="font-black uppercase tracking-wide text-sm text-gray-900 hover:text-brand transition-colors">Log In</a>
+                    <a href="{{ route('register') }}" class="font-black uppercase tracking-wide text-sm text-brand hover:text-brand-dark transition-colors">Create Account</a>
+                </div>
+                @endauth
+            </div>
 
             {{-- Yamaha Products — level 1 --}}
             <div class="border-b border-gray-100" x-data="{ open: false }">

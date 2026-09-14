@@ -5,9 +5,18 @@
 @section('content')
 
 <div class="bg-ink border-b-2 border-brand">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 class="text-4xl font-black uppercase text-white tracking-tight">My Account</h1>
-        <p class="text-gray-400 mt-1">Welcome back, {{ auth()->user()->name }}.</p>
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-4xl font-black uppercase text-white tracking-tight">My Account</h1>
+            <p class="text-gray-400 mt-1">Welcome back, {{ auth()->user()->name }}.</p>
+        </div>
+        <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
+            @csrf
+            <button type="submit"
+                    class="inline-flex items-center justify-center font-black text-xs uppercase tracking-widest transition-colors text-white bg-transparent border-2 border-white/80 hover:bg-white hover:text-ink rounded px-6 py-3">
+                Log Out
+            </button>
+        </form>
     </div>
 </div>
 
