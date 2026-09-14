@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ServiceBookingConfirmationMail;
 use App\Mail\ServiceBookingMail;
 use App\Models\ServiceBooking;
 use App\Models\Setting;
@@ -48,6 +49,17 @@ class ServiceController extends Controller
             Log::error('Failed to send service booking notification email', [
                 'booking_id' => $booking->id,
                 'to'         => $notificationEmail,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            Mail::to($booking->email)
+                ->send(new ServiceBookingConfirmationMail($booking));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send service booking confirmation email', [
+                'booking_id' => $booking->id,
+                'to'         => $booking->email,
                 'error'      => $e->getMessage(),
             ]);
         }
