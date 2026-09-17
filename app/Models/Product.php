@@ -75,9 +75,13 @@ class Product extends Model
     {
         $paths = array_values(array_filter($paths, fn ($p) => is_string($p)));
 
-        $this->images()->whereNotIn('path', $paths)->delete();
+        // Hero is uploaded via its own field, separate from the gallery, so it
+        // needs its own product_images row — it won't already be in $paths.
+        $orderedPaths = $heroPath ? array_values(array_unique([$heroPath, ...$paths])) : $paths;
 
-        foreach ($paths as $i => $path) {
+        $this->images()->whereNotIn('path', $orderedPaths)->delete();
+
+        foreach ($orderedPaths as $i => $path) {
             $this->images()->updateOrCreate(['path' => $path], ['sort_order' => $i]);
         }
 

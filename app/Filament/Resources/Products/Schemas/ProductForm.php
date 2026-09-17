@@ -106,11 +106,24 @@ class ProductForm
                     ]),
 
                 Section::make('Photos')
-                    ->description('Drag & drop or click to upload. Then choose which photo is the hero image shown on the shop listing and product page.')
+                    ->description('Upload the hero photo first — it\'s what shows on the shop listing and at the top of the product page. Then add any additional photos below.')
                     ->columnSpanFull()
                     ->schema([
+                        FileUpload::make('hero_image')
+                            ->label('Hero Image')
+                            ->helperText('Shown on the shop listing card and at the top of the product page. Leave blank to fall back to the first additional photo.')
+                            ->image()
+                            ->disk('public')
+                            ->directory('shop/products')
+                            ->imageResizeTargetWidth(1400)
+                            ->imageResizeTargetHeight(1400)
+                            ->imageResizeMode('contain')
+                            ->imageResizeUpscale(false)
+                            ->maxSize(5120)
+                            ->columnSpanFull(),
                         FileUpload::make('images')
-                            ->label('Product Photos')
+                            ->label('Additional Photos')
+                            ->helperText('Drag thumbnails to reorder — order saves automatically.')
                             ->image()
                             ->multiple()
                             ->reorderable()
@@ -124,19 +137,6 @@ class ProductForm
                             ->imageResizeUpscale(false)
                             ->maxFiles(20)
                             ->maxSize(5120)
-                            ->live()
-                            ->columnSpanFull(),
-                        Select::make('hero_image')
-                            ->label('Hero Image')
-                            ->helperText('Shown on the shop listing card and at the top of the product page.')
-                            ->native(false)
-                            ->options(function (Get $get) {
-                                return collect($get('images') ?? [])
-                                    ->filter(fn ($path) => is_string($path))
-                                    ->mapWithKeys(fn ($path) => [$path => basename((string) $path)])
-                                    ->all();
-                            })
-                            ->required(fn (Get $get) => filled($get('images')))
                             ->columnSpanFull(),
                     ]),
 

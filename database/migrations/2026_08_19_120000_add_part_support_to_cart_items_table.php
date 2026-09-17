@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -14,7 +13,9 @@ return new class extends Migration
         // table/PK, no stock tracking, and price looked up by number rather
         // than stored on the model) - product_id has to become optional so
         // a part-only row doesn't need one.
-        DB::statement('ALTER TABLE cart_items MODIFY product_id BIGINT UNSIGNED NULL');
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->foreignId('product_id')->nullable()->change();
+        });
 
         Schema::table('cart_items', function (Blueprint $table) {
             $table->string('part_number')->nullable()->after('product_variant_id');
@@ -33,6 +34,8 @@ return new class extends Migration
             $table->dropColumn(['part_number', 'part_description', 'unit_price_snapshot', 'currency']);
         });
 
-        DB::statement('ALTER TABLE cart_items MODIFY product_id BIGINT UNSIGNED NOT NULL');
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->foreignId('product_id')->nullable(false)->change();
+        });
     }
 };
