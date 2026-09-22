@@ -37,18 +37,18 @@ class ServiceController extends Controller
 
         $booking = ServiceBooking::create($data);
 
-        $notificationEmail = Setting::get(
+        $notificationEmails = Setting::getEmailList(
             'service_booking_email',
             env('BOOKING_EMAIL', 'info@staryamaha.com.au')
         );
 
         try {
-            Mail::to($notificationEmail)
+            Mail::to($notificationEmails)
                 ->send(new ServiceBookingMail($booking));
         } catch (\Throwable $e) {
             Log::error('Failed to send service booking notification email', [
                 'booking_id' => $booking->id,
-                'to'         => $notificationEmail,
+                'to'         => $notificationEmails,
                 'error'      => $e->getMessage(),
             ]);
         }

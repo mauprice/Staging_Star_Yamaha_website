@@ -182,14 +182,16 @@
     <div class="sd-card-header">Booking Notifications</div>
     <div class="sd-settings-row">
         <div class="sd-settings-label">
-            <strong>Notification Email</strong>
-            <span>New service booking requests are emailed to this address.</span>
+            <strong>Notification Email(s)</strong>
+            <span>New service booking requests are emailed to these addresses. Separate multiple addresses with commas.</span>
         </div>
         <input
             type="email"
-            wire:model="notification_email"
+            multiple
+            wire:model="notification_emails"
             class="sd-settings-input"
-            placeholder="service@staryamaha.com.au"
+            placeholder="service@staryamaha.com.au, manager@staryamaha.com.au"
+            style="width: 420px;"
         />
         <button
             wire:click="saveNotificationEmail"

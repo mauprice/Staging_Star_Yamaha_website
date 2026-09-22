@@ -22,4 +22,22 @@ class Setting extends Model
     {
         static::updateOrCreate(['key' => $key], ['value' => (string) $value]);
     }
+
+    /**
+     * Read a comma-separated list setting (e.g. "a@x.com, b@x.com") as an
+     * array of valid email addresses, falling back to $default (itself
+     * comma-separated) when the setting is unset or empty.
+     *
+     * @return string[]
+     */
+    public static function getEmailList(string $key, string $default = ''): array
+    {
+        $value = static::get($key, $default);
+
+        return collect(explode(',', $value))
+            ->map(fn ($email) => trim($email))
+            ->filter(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->values()
+            ->all();
+    }
 }

@@ -26,7 +26,7 @@ class ServiceDashboard extends Page
     public int $unrepliedCount = 0;
     public int $todayCount    = 0;
 
-    public string $notification_email = '';
+    public string $notification_emails = '';
 
     /** @var \Illuminate\Database\Eloquent\Collection */
     public $recentBookings;
@@ -44,7 +44,7 @@ class ServiceDashboard extends Page
         $this->todayCount     = ServiceBooking::whereDate('preferred_date', Carbon::today())->count();
         $this->recentBookings = ServiceBooking::latest()->take(10)->get();
 
-        $this->notification_email = Setting::get(
+        $this->notification_emails = Setting::get(
             'service_booking_email',
             env('BOOKING_EMAIL', 'info@staryamaha.com.au')
         );
@@ -52,18 +52,34 @@ class ServiceDashboard extends Page
 
     public function saveNotificationEmail(): void
     {
-        if (! filter_var($this->notification_email, FILTER_VALIDATE_EMAIL)) {
+        $emails = collect(explode(',', $this->notification_emails))
+            ->map(fn ($email) => trim($email))
+            ->filter()
+            ->values();
+
+        if ($emails->isEmpty()) {
             Notification::make()
-                ->title('Invalid email address')
+                ->title('Enter at least one email address')
                 ->danger()
                 ->send();
             return;
         }
 
-        Setting::set('service_booking_email', $this->notification_email);
+        $invalid = $emails->reject(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
+
+        if ($invalid->isNotEmpty()) {
+            Notification::make()
+                ->title('Invalid email address: ' . $invalid->join(', '))
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->notification_emails = $emails->join(', ');
+        Setting::set('service_booking_email', $this->notification_emails);
 
         Notification::make()
-            ->title('Notification email saved')
+            ->title($emails->count() > 1 ? 'Notification emails saved' : 'Notification email saved')
             ->success()
             ->send();
     }
