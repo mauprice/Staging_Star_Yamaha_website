@@ -157,6 +157,69 @@
     box-shadow: 0 0 0 3px rgba(245,158,11,.15);
 }
 
+.sd-tags-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: #111827;
+    padding: 5px 8px;
+    flex-shrink: 0;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.sd-tags-input:focus-within {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,.15);
+}
+
+.sd-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 20px;
+    background: #374151;
+    color: #f3f4f6;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.sd-tag button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.sd-tag button:hover {
+    background: #4b5563;
+    color: #f9fafb;
+}
+
+.sd-tags-input input {
+    flex: 1;
+    min-width: 140px;
+    border: none;
+    background: transparent;
+    color: #f9fafb;
+    font-size: 14px;
+    outline: none;
+    padding: 4px 2px;
+}
+
 .sd-settings-save {
     display: inline-flex;
     align-items: center;
@@ -180,19 +243,41 @@
 
 <div class="sd-card" style="margin-bottom: 24px;">
     <div class="sd-card-header">Booking Notifications</div>
-    <div class="sd-settings-row">
+    <div class="sd-settings-row"
+        x-data="{
+            emails: $wire.entangle('notification_emails'),
+            draft: '',
+            addFromDraft() {
+                this.draft.split(',').forEach(part => {
+                    const email = part.trim();
+                    if (email && ! this.emails.includes(email)) {
+                        this.emails.push(email);
+                    }
+                });
+                this.draft = '';
+            },
+        }"
+    >
         <div class="sd-settings-label">
             <strong>Notification Email(s)</strong>
-            <span>New service booking requests are emailed to these addresses. Separate multiple addresses with commas.</span>
+            <span>New service booking requests are emailed to each address in this list.</span>
         </div>
-        <input
-            type="email"
-            multiple
-            wire:model="notification_emails"
-            class="sd-settings-input"
-            placeholder="service@staryamaha.com.au, manager@staryamaha.com.au"
-            style="width: 420px;"
-        />
+        <div class="sd-tags-input" style="width: 420px;" @click="$el.querySelector('input').focus()">
+            <template x-for="(email, index) in emails" :key="index">
+                <span class="sd-tag">
+                    <span x-text="email"></span>
+                    <button type="button" @click="emails.splice(index, 1)" aria-label="Remove email">&times;</button>
+                </span>
+            </template>
+            <input
+                type="text"
+                x-model="draft"
+                @keydown.enter.prevent="addFromDraft()"
+                @keydown.,.prevent="addFromDraft()"
+                @blur="addFromDraft()"
+                placeholder="Add an email…"
+            />
+        </div>
         <button
             wire:click="saveNotificationEmail"
             wire:loading.attr="disabled"

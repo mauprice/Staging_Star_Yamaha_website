@@ -26,7 +26,8 @@ class ServiceDashboard extends Page
     public int $unrepliedCount = 0;
     public int $todayCount    = 0;
 
-    public string $notification_emails = '';
+    /** @var string[] */
+    public array $notification_emails = [];
 
     /** @var \Illuminate\Database\Eloquent\Collection */
     public $recentBookings;
@@ -44,7 +45,7 @@ class ServiceDashboard extends Page
         $this->todayCount     = ServiceBooking::whereDate('preferred_date', Carbon::today())->count();
         $this->recentBookings = ServiceBooking::latest()->take(10)->get();
 
-        $this->notification_emails = Setting::get(
+        $this->notification_emails = Setting::getEmailList(
             'service_booking_email',
             env('BOOKING_EMAIL', 'info@staryamaha.com.au')
         );
@@ -52,14 +53,15 @@ class ServiceDashboard extends Page
 
     public function saveNotificationEmail(): void
     {
-        $emails = collect(explode(',', $this->notification_emails))
-            ->map(fn ($email) => trim($email))
+        $emails = collect($this->notification_emails)
+            ->map(fn ($email) => trim((string) $email))
             ->filter()
+            ->unique()
             ->values();
 
         if ($emails->isEmpty()) {
             Notification::make()
-                ->title('Enter at least one email address')
+                ->title('Add at least one email address')
                 ->danger()
                 ->send();
             return;
@@ -75,8 +77,8 @@ class ServiceDashboard extends Page
             return;
         }
 
-        $this->notification_emails = $emails->join(', ');
-        Setting::set('service_booking_email', $this->notification_emails);
+        $this->notification_emails = $emails->all();
+        Setting::set('service_booking_email', $emails->join(', '));
 
         Notification::make()
             ->title($emails->count() > 1 ? 'Notification emails saved' : 'Notification email saved')
