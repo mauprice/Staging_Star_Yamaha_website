@@ -35,6 +35,11 @@ class ProductsTable
                     ->weight('bold')
                     ->description(fn ($record) => $record->brand),
 
+                TextColumn::make('part_number')
+                    ->label('Part Number')
+                    ->searchable()
+                    ->placeholder('—'),
+
                 TextColumn::make('category')
                     ->badge()
                     ->color('gray'),

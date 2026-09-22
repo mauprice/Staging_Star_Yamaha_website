@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class OrderCompletedMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(public readonly Order $order)
+    {
+        $this->order->loadMissing('items');
+    }
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(subject: "Your Star Yamaha Order {$this->order->order_number} Is Complete");
+    }
+
+    public function content(): Content
+    {
+        return new Content(view: 'emails.order-completed', with: ['order' => $this->order]);
+    }
+}

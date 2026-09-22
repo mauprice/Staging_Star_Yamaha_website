@@ -12,7 +12,15 @@ class ShopController extends Controller
     {
         $products = Product::where('active', true)
             ->when($request->filled('category'), fn ($q) => $q->where('category', $request->string('category')))
-            ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%' . $request->string('q') . '%'))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $search = $request->string('q');
+
+                $q->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('part_number', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
             ->with('heroImage')
             ->orderBy('sort_order')
             ->orderByDesc('created_at')

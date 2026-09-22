@@ -14,10 +14,10 @@ class Order extends Model
     protected $fillable = [
         'order_number', 'user_id', 'cashier_id', 'placed_as_guest', 'source',
         'customer_name', 'customer_email', 'customer_phone',
-        'status', 'payment_method', 'currency',
+        'status', 'payment_method', 'fulfillment_method', 'currency',
         'subtotal', 'shipping_total', 'total', 'tax_total',
-        'notes', 'ip_address', 'user_agent',
-        'placed_at', 'paid_at', 'cancelled_at',
+        'notes', 'customer_notes', 'ip_address', 'user_agent',
+        'placed_at', 'paid_at', 'shipped_at', 'completed_at', 'cancelled_at',
     ];
 
     protected $casts = [
@@ -30,8 +30,15 @@ class Order extends Model
         'tax_total' => 'decimal:2',
         'placed_at' => 'datetime',
         'paid_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    public function isPickup(): bool
+    {
+        return $this->fulfillment_method === 'pickup';
+    }
 
     protected static function booted(): void
     {

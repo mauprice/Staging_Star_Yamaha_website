@@ -6,7 +6,6 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\CheckoutController;
-use App\Services\StockService;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
@@ -40,6 +39,12 @@ class OrdersTable
                     ->badge()
                     ->color('gray')
                     ->formatStateUsing(fn ($state) => $state?->label() ?? '—'),
+
+                TextColumn::make('fulfillment_method')
+                    ->label('Fulfillment')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'pickup' ? 'Pickup' : 'Shipping')
+                    ->color(fn ($state) => $state === 'pickup' ? 'warning' : 'gray'),
 
                 TextColumn::make('total')
                     ->money('AUD')
@@ -93,9 +98,10 @@ class OrdersTable
                                 return;
                             }
 
-                            app(StockService::class)->decrementForOrder($order);
-
-                            $order->update(['status' => OrderStatus::Paid, 'paid_at' => now()]);
+                            // Stock decrement, paid_at, and the receipt email
+                            // are handled by OrderObserver on this same
+                            // status transition.
+                            $order->update(['status' => OrderStatus::Paid]);
 
                             $order->payments()
                                 ->where('provider', 'bank_transfer')

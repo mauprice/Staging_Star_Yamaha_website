@@ -39,13 +39,26 @@
                 </div>
 
                 <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-3">Shipping Address</h2>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-3">{{ $isPickup ? 'Delivery Method' : 'Shipping Address' }}</h2>
+                    @if($isPickup)
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        Local Pickup — collect in-store at {{ config('dealership.address.street') }}, {{ config('dealership.address.suburb') }} {{ config('dealership.address.state') }}. We'll email you when it's ready.
+                    </p>
+                    @else
                     <p class="text-sm text-gray-700 leading-relaxed">
                         {{ $validated['line1'] }}<br>
                         @if(!empty($validated['line2'])){{ $validated['line2'] }}<br>@endif
                         {{ $validated['suburb'] }} {{ $validated['state'] }} {{ $validated['postcode'] }}
                     </p>
+                    @endif
                 </div>
+
+                @if(!empty($validated['notes']))
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-3">Order Notes</h2>
+                    <p class="text-sm text-gray-700 leading-relaxed">{{ $validated['notes'] }}</p>
+                </div>
+                @endif
 
                 @if(!empty($validated['different_billing']))
                 <div class="bg-white rounded-xl border border-gray-200 p-6">

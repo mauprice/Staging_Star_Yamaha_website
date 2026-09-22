@@ -35,7 +35,16 @@
         </div>
         @endif
 
-        <div class="grid lg:grid-cols-3 gap-10">
+        <div class="grid lg:grid-cols-3 gap-10"
+             x-data="{
+                 differentBilling: {{ old('different_billing', $prefill['different_billing'] ?? false) ? 'true' : 'false' }},
+                 fulfillmentMethod: '{{ old('fulfillment_method', $prefill['fulfillment_method'] ?? 'shipping') }}',
+                 subtotal: {{ (float) $subtotal }},
+                 shippingRate: {{ (float) $shippingTotal }},
+                 get shippingDisplay() { return this.fulfillmentMethod === 'pickup' ? 0 : this.shippingRate; },
+                 get totalDisplay() { return this.subtotal + this.shippingDisplay; },
+             }"
+        >
 
             <div class="lg:col-span-2">
 
@@ -54,7 +63,7 @@
                 </div>
                 @endauth
 
-                <form method="POST" action="{{ route('yamaha.checkout.store') }}" x-data="{ differentBilling: {{ old('different_billing', $prefill['different_billing'] ?? false) ? 'true' : 'false' }} }">
+                <form method="POST" action="{{ route('yamaha.checkout.store') }}">
                     @csrf
 
                     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -82,11 +91,35 @@
                     </div>
 
                     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-4">Delivery Method</h2>
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition"
+                                   :class="fulfillmentMethod === 'shipping' ? 'border-brand bg-brand-tint' : 'border-gray-200 hover:border-gray-300'">
+                                <input type="radio" name="fulfillment_method" value="shipping" x-model="fulfillmentMethod" class="mt-0.5">
+                                <span>
+                                    <span class="block font-black text-sm text-gray-900">Ship to my address</span>
+                                    <span class="block text-xs text-gray-500 mt-0.5">Delivered to the shipping address below.</span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition"
+                                   :class="fulfillmentMethod === 'pickup' ? 'border-brand bg-brand-tint' : 'border-gray-200 hover:border-gray-300'">
+                                <input type="radio" name="fulfillment_method" value="pickup" x-model="fulfillmentMethod" class="mt-0.5">
+                                <span>
+                                    <span class="block font-black text-sm text-gray-900">Local Pickup — Free</span>
+                                    <span class="block text-xs text-gray-500 mt-0.5">
+                                        Collect in-store at {{ config('dealership.address.street') }}, {{ config('dealership.address.suburb') }} {{ config('dealership.address.state') }}. We'll email you when it's ready.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6" x-show="fulfillmentMethod === 'shipping'" x-cloak>
                         <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-4">Shipping Address</h2>
                         <div class="grid sm:grid-cols-2 gap-4">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Address Line 1</label>
-                                <input type="text" name="line1" value="{{ old('line1', $prefill['line1'] ?? '') }}" required
+                                <input type="text" name="line1" value="{{ old('line1', $prefill['line1'] ?? '') }}" :required="fulfillmentMethod === 'shipping'"
                                        class="w-full border border-gray-300 rounded-lg p-3 text-sm">
                             </div>
                             <div class="sm:col-span-2">
@@ -96,13 +129,13 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Suburb</label>
-                                <input type="text" name="suburb" value="{{ old('suburb', $prefill['suburb'] ?? '') }}" required
+                                <input type="text" name="suburb" value="{{ old('suburb', $prefill['suburb'] ?? '') }}" :required="fulfillmentMethod === 'shipping'"
                                        class="w-full border border-gray-300 rounded-lg p-3 text-sm">
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-1">State</label>
-                                    <select name="state" required class="w-full border border-gray-300 rounded-lg p-3 text-sm">
+                                    <select name="state" :required="fulfillmentMethod === 'shipping'" class="w-full border border-gray-300 rounded-lg p-3 text-sm">
                                         <option value="">—</option>
                                         @foreach(\App\Http\Controllers\CheckoutController::AU_STATES as $state)
                                         <option value="{{ $state }}" @selected(old('state', $prefill['state'] ?? null) === $state)>{{ $state }}</option>
@@ -111,7 +144,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-1">Postcode</label>
-                                    <input type="text" name="postcode" value="{{ old('postcode', $prefill['postcode'] ?? '') }}" required maxlength="10"
+                                    <input type="text" name="postcode" value="{{ old('postcode', $prefill['postcode'] ?? '') }}" :required="fulfillmentMethod === 'shipping'" maxlength="10"
                                            class="w-full border border-gray-300 rounded-lg p-3 text-sm">
                                 </div>
                             </div>
@@ -157,6 +190,12 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-gray-900 mb-4">Order Notes <span class="text-gray-400 font-normal normal-case">(optional)</span></h2>
+                        <textarea name="notes" rows="3" maxlength="1000" placeholder="Delivery instructions, preferred pickup time, anything else we should know…"
+                                  class="w-full border border-gray-300 rounded-lg p-3 text-sm">{{ old('notes', $prefill['notes'] ?? '') }}</textarea>
                     </div>
 
                     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -219,11 +258,11 @@
                         </div>
                         <div class="flex justify-between text-gray-600">
                             <span>Shipping</span>
-                            <span>{{ $shippingTotal > 0 ? '$' . number_format($shippingTotal, 2) : 'Free' }}</span>
+                            <span x-text="shippingDisplay > 0 ? '$' + shippingDisplay.toFixed(2) : 'Free'">{{ $shippingTotal > 0 ? '$' . number_format($shippingTotal, 2) : 'Free' }}</span>
                         </div>
                         <div class="flex justify-between text-lg font-black text-brand pt-2 border-t border-gray-200">
                             <span>Total</span>
-                            <span>${{ number_format($total, 2) }}</span>
+                            <span x-text="'$' + totalDisplay.toFixed(2)">${{ number_format($total, 2) }}</span>
                         </div>
                     </div>
                 </div>

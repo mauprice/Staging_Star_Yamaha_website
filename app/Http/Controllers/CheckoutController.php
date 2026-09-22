@@ -130,11 +130,12 @@ class CheckoutController extends Controller
                 ->with('error', 'Some items in your cart are no longer available in the quantity requested. Please review your cart.');
         }
 
+        $isPickup = ($validated['fulfillment_method'] ?? 'shipping') === 'pickup';
         $subtotal = $items->sum('line_total');
-        $shippingTotal = $shippingCalculator->forSubtotal($subtotal);
+        $shippingTotal = $isPickup ? 0.0 : $shippingCalculator->forSubtotal($subtotal);
         $total = $subtotal + $shippingTotal;
 
-        return view('yamaha.checkout.review', compact('items', 'subtotal', 'shippingTotal', 'total', 'validated'));
+        return view('yamaha.checkout.review', compact('items', 'subtotal', 'shippingTotal', 'total', 'validated', 'isPickup'));
     }
 
     public function confirm(Request $request): RedirectResponse
@@ -225,6 +226,7 @@ class CheckoutController extends Controller
         $customerEmail = strtolower(trim($validated['email']));
         $customerPhone = filled($validated['phone'] ?? null) ? PhoneNumber::normalize($validated['phone']) : null;
         $billingSame = empty($validated['different_billing']);
+        $isPickup = ($validated['fulfillment_method'] ?? 'shipping') === 'pickup';
 
         // Safe dedupe: run only for guests, never surface the result in the
         // response - the HTTP outcome is identical whether or not this
@@ -238,12 +240,12 @@ class CheckoutController extends Controller
         }
 
         $subtotal = $items->sum('line_total');
-        $shippingTotal = app(ShippingCalculator::class)->forSubtotal($subtotal);
+        $shippingTotal = $isPickup ? 0.0 : app(ShippingCalculator::class)->forSubtotal($subtotal);
         $total = $subtotal + $shippingTotal;
 
         $order = DB::transaction(function () use (
             $items, $validated, $customerEmail, $customerPhone, $matchedUser,
-            $billingSame, $subtotal, $shippingTotal, $total, $request, $paymentMethod,
+            $billingSame, $isPickup, $subtotal, $shippingTotal, $total, $request, $paymentMethod,
         ) {
             $order = Order::create([
                 'user_id' => auth()->id() ?? $matchedUser?->id,
@@ -253,10 +255,12 @@ class CheckoutController extends Controller
                 'customer_phone' => $customerPhone,
                 'status' => $paymentMethod === PaymentMethod::BankTransfer ? OrderStatus::AwaitingBankDeposit : OrderStatus::PendingPayment,
                 'payment_method' => $paymentMethod,
+                'fulfillment_method' => $isPickup ? 'pickup' : 'shipping',
                 'currency' => 'AUD',
                 'subtotal' => $subtotal,
                 'shipping_total' => $shippingTotal,
                 'total' => $total,
+                'customer_notes' => filled($validated['notes'] ?? null) ? trim($validated['notes']) : null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'placed_at' => now(),
@@ -275,17 +279,19 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            $order->addresses()->create([
-                'type' => 'shipping',
-                'full_name' => $validated['name'],
-                'phone' => $customerPhone,
-                'line1' => $validated['line1'],
-                'line2' => $validated['line2'] ?? null,
-                'suburb' => $validated['suburb'],
-                'state' => $validated['state'],
-                'postcode' => $validated['postcode'],
-                'country' => 'AU',
-            ]);
+            if (! $isPickup) {
+                $order->addresses()->create([
+                    'type' => 'shipping',
+                    'full_name' => $validated['name'],
+                    'phone' => $customerPhone,
+                    'line1' => $validated['line1'],
+                    'line2' => $validated['line2'] ?? null,
+                    'suburb' => $validated['suburb'],
+                    'state' => $validated['state'],
+                    'postcode' => $validated['postcode'],
+                    'country' => 'AU',
+                ]);
+            }
 
             if (! $billingSame) {
                 $order->addresses()->create([
@@ -318,11 +324,12 @@ class CheckoutController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'line1' => ['required', 'string', 'max:255'],
+            'fulfillment_method' => ['required', 'string', 'in:shipping,pickup'],
+            'line1' => ['required_if:fulfillment_method,shipping', 'nullable', 'string', 'max:255'],
             'line2' => ['nullable', 'string', 'max:255'],
-            'suburb' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'string', 'in:' . implode(',', self::AU_STATES)],
-            'postcode' => ['required', 'string', 'max:10'],
+            'suburb' => ['required_if:fulfillment_method,shipping', 'nullable', 'string', 'max:100'],
+            'state' => ['required_if:fulfillment_method,shipping', 'nullable', 'string', 'in:' . implode(',', self::AU_STATES)],
+            'postcode' => ['required_if:fulfillment_method,shipping', 'nullable', 'string', 'max:10'],
             'different_billing' => ['nullable', 'boolean'],
             'billing_line1' => ['required_if:different_billing,1', 'nullable', 'string', 'max:255'],
             'billing_line2' => ['nullable', 'string', 'max:255'],
@@ -330,6 +337,7 @@ class CheckoutController extends Controller
             'billing_state' => ['required_if:different_billing,1', 'nullable', 'string', 'in:' . implode(',', self::AU_STATES)],
             'billing_postcode' => ['required_if:different_billing,1', 'nullable', 'string', 'max:10'],
             'payment_method' => ['required', 'string', 'in:' . implode(',', array_map(fn ($m) => $m->value, $availableMethods))],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

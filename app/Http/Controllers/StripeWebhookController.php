@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Mail\OrderAccountMatchMail;
-use App\Mail\OrderReceiptMail;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentWebhookEvent;
-use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -20,10 +18,6 @@ use Stripe\Webhook;
 
 class StripeWebhookController extends Controller
 {
-    public function __construct(private readonly StockService $stockService)
-    {
-    }
-
     public function handle(Request $request): Response
     {
         try {
@@ -82,15 +76,11 @@ class StripeWebhookController extends Controller
                 return $order;
             }
 
-            $conflicts = $this->stockService->decrementForOrder($order);
-
-            $order->update([
-                'status' => OrderStatus::Paid,
-                'paid_at' => now(),
-                'notes' => $conflicts
-                    ? trim(($order->notes ? $order->notes . "\n" : '') . "STOCK CONFLICT (needs manual review):\n" . implode("\n", $conflicts))
-                    : $order->notes,
-            ]);
+            // Stock decrement and the receipt email are handled centrally by
+            // OrderObserver, triggered by this status transition - keeps the
+            // same behavior working for every payment path (bank transfer,
+            // POS), not just Stripe.
+            $order->update(['status' => OrderStatus::Paid]);
 
             Payment::where('provider', 'stripe')
                 ->where('provider_reference', $session->id)
@@ -108,11 +98,6 @@ class StripeWebhookController extends Controller
 
             return;
         }
-
-        // Money-moving state is already committed above; email is the slow
-        // part (SMTP + PDF render), kept off the synchronous webhook path so
-        // it can't cause Stripe to time out and retry.
-        Mail::to($order->customer_email)->queue(new OrderReceiptMail($order));
 
         if ($order->placed_as_guest && $order->user_id) {
             $order->loadMissing('user');
@@ -179,15 +164,7 @@ class StripeWebhookController extends Controller
                 return;
             }
 
-            $conflicts = $this->stockService->decrementForOrder($order);
-
-            $order->update([
-                'status' => OrderStatus::Paid,
-                'paid_at' => now(),
-                'notes' => $conflicts
-                    ? trim(($order->notes ? $order->notes . "\n" : '') . "STOCK CONFLICT (needs manual review):\n" . implode("\n", $conflicts))
-                    : $order->notes,
-            ]);
+            $order->update(['status' => OrderStatus::Paid]);
 
             Payment::where('provider', 'stripe')
                 ->where('provider_reference', $intent->id)

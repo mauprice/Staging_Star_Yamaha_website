@@ -14,12 +14,15 @@ class OrderInfolist
         return $schema
             ->components([
                 Section::make('Order')
-                    ->columns(4)
+                    ->columns(5)
                     ->columnSpanFull()
                     ->schema([
                         TextEntry::make('order_number')->label('Order #'),
                         TextEntry::make('status')->badge()->color(fn ($state) => $state->color()),
                         TextEntry::make('payment_method')->badge()->formatStateUsing(fn ($state) => $state?->label() ?? '—'),
+                        TextEntry::make('fulfillment_method')->label('Fulfillment')->badge()
+                            ->formatStateUsing(fn ($state) => $state === 'pickup' ? 'Local Pickup' : 'Shipping')
+                            ->color(fn ($state) => $state === 'pickup' ? 'warning' : 'gray'),
                         TextEntry::make('total')->money('AUD'),
                     ]),
 
@@ -50,12 +53,28 @@ class OrderInfolist
                 Section::make('Shipping Address')
                     ->columns(3)
                     ->columnSpanFull()
+                    ->visible(fn ($record) => ! $record->isPickup())
                     ->schema([
                         TextEntry::make('shippingAddress.line1')->label('Address'),
                         TextEntry::make('shippingAddress.suburb')->label('Suburb'),
                         TextEntry::make('shippingAddress.state')->label('State'),
                         TextEntry::make('shippingAddress.postcode')->label('Postcode'),
                         TextEntry::make('shippingAddress.country')->label('Country'),
+                    ]),
+
+                Section::make('Local Pickup')
+                    ->columnSpanFull()
+                    ->visible(fn ($record) => $record->isPickup())
+                    ->schema([
+                        TextEntry::make('fulfillment_method')->hiddenLabel()
+                            ->formatStateUsing(fn () => 'This order is for in-store pickup — no shipping address was collected.'),
+                    ]),
+
+                Section::make('Customer Notes')
+                    ->columnSpanFull()
+                    ->visible(fn ($record) => filled($record->customer_notes))
+                    ->schema([
+                        TextEntry::make('customer_notes')->hiddenLabel()->columnSpanFull(),
                     ]),
 
                 Section::make('Payment Log')

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Http\Controllers\CartController;
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,5 +26,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('yamaha.layout', function ($view) {
             $view->with('cartCount', CartController::currentCount());
         });
+
+        Order::observe(OrderObserver::class);
     }
 }

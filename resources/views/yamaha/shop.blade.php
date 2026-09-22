@@ -20,14 +20,29 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
+        {{-- Search --}}
+        <form method="GET" action="{{ route('yamaha.shop.index') }}" class="mb-6">
+            @if(request('category'))
+            <input type="hidden" name="category" value="{{ request('category') }}">
+            @endif
+            <div class="relative max-w-md">
+                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="search" name="q" value="{{ request('q') }}"
+                       placeholder="Search by part number or description…"
+                       class="w-full border border-gray-300 rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+            </div>
+        </form>
+
         {{-- Filter bar --}}
         <div class="flex flex-wrap gap-2 mb-8">
-            <a href="{{ route('yamaha.shop.index') }}"
+            <a href="{{ route('yamaha.shop.index', ['q' => request('q')]) }}"
                class="px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-full transition-colors {{ request('category') ? 'bg-gray-100 text-gray-700 hover:bg-brand-tint hover:text-brand-dark' : 'bg-brand text-white' }}">
                 All
             </a>
             @foreach($categories as $cat)
-            <a href="{{ route('yamaha.shop.index', ['category' => $cat]) }}"
+            <a href="{{ route('yamaha.shop.index', ['category' => $cat, 'q' => request('q')]) }}"
                class="px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-full transition-colors {{ request('category') === $cat ? 'bg-brand text-white' : 'bg-gray-100 text-gray-700 hover:bg-brand-tint hover:text-brand-dark' }}">
                 {{ $cat }}
             </a>
@@ -53,7 +68,7 @@
                 fit="contain"
                 :badge="$product->category"
                 :title="$product->name"
-                :description="$product->brand">
+                :description="trim($product->brand . ($product->part_number ? ' · Part# ' . $product->part_number : ''), ' ·')">
 
                 @if($product->isClothing())
                 <p class="text-sm text-gray-500">From <span class="text-xl font-black text-brand">${{ number_format($product->price, 2) }}</span></p>
