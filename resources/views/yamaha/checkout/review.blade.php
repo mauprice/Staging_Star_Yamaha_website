@@ -23,6 +23,7 @@
         <div class="mb-8 p-5 rounded-lg border-l-4 border-brand bg-brand-tint text-gray-800">
             <p class="font-black text-sm mb-1">No payment is taken yet</p>
             <p class="text-sm">You're paying by direct deposit. Confirm below to place your order — we'll email you our bank details, and your order ships once we've verified the deposit.</p>
+            <p class="text-xs text-gray-600 mt-1">That email sometimes lands in junk/spam — worth checking there if it doesn't show up in your inbox.</p>
         </div>
 
         <div class="grid lg:grid-cols-3 gap-10">

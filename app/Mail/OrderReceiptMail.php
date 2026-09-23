@@ -6,6 +6,7 @@ use App\Models\Order;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -22,7 +23,10 @@ class OrderReceiptMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Your Star Yamaha Order {$this->order->order_number}");
+        return new Envelope(
+            subject: "Your Star Yamaha Order {$this->order->order_number}",
+            replyTo: [new Address(config('dealership.email.enquiries'), config('dealership.name'))],
+        );
     }
 
     public function content(): Content

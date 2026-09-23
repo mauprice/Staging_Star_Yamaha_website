@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderCompletedMail extends Mailable
+class OrderReadyForPickupMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -22,13 +22,16 @@ class OrderCompletedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Your Star Yamaha Order {$this->order->order_number} Is Complete",
-            replyTo: [new Address(config('dealership.email.enquiries'), config('dealership.name'))],
+            subject: "Your Star Yamaha Order {$this->order->order_number} Is Ready for Pickup",
+            replyTo: [new Address(
+                config('dealership.email.enquiries'),
+                config('dealership.name'),
+            )],
         );
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.order-completed', with: ['order' => $this->order]);
+        return new Content(view: 'emails.order-ready-for-pickup', with: ['order' => $this->order]);
     }
 }

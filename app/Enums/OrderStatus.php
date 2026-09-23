@@ -12,6 +12,7 @@ enum OrderStatus: string
     case Refunded = 'refunded';
     case Processing = 'processing'; // Phase 5
     case Shipped = 'shipped'; // Phase 5
+    case ReadyForPickup = 'ready_for_pickup';
     case Completed = 'completed';
 
     public function label(): string
@@ -25,6 +26,7 @@ enum OrderStatus: string
             self::Refunded => 'Refunded',
             self::Processing => 'Processing',
             self::Shipped => 'Shipped',
+            self::ReadyForPickup => 'Ready for Pickup',
             self::Completed => 'Completed',
         };
     }
@@ -36,7 +38,7 @@ enum OrderStatus: string
             self::Paid, self::Completed => 'success',
             self::PaymentFailed, self::Cancelled => 'danger',
             self::Refunded => 'gray',
-            self::Processing, self::Shipped => 'info',
+            self::Processing, self::Shipped, self::ReadyForPickup => 'info',
         };
     }
 }

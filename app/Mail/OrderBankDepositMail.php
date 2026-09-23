@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -26,7 +27,10 @@ class OrderBankDepositMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Your Star Yamaha Order {$this->order->order_number} — Direct Deposit Details");
+        return new Envelope(
+            subject: "Your Star Yamaha Order {$this->order->order_number} — Direct Deposit Details",
+            replyTo: [new Address(config('dealership.email.enquiries'), config('dealership.name'))],
+        );
     }
 
     public function content(): Content

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Mail\OrderCompletedMail;
+use App\Mail\OrderReadyForPickupMail;
 use App\Mail\OrderReceiptMail;
 use App\Mail\OrderShippedMail;
 use App\Models\Order;
@@ -68,6 +69,40 @@ class OrderStatusTransitionTest extends TestCase
         $order->update(['status' => OrderStatus::Completed]);
         Mail::assertQueued(OrderCompletedMail::class);
         $this->assertNotNull($order->fresh()->completed_at);
+    }
+
+    public function test_ready_for_pickup_transition_sends_its_own_email(): void
+    {
+        Mail::fake();
+
+        $order = Order::create([
+            'customer_name' => 'Test', 'customer_email' => 'test@example.com',
+            'status' => OrderStatus::Paid,
+            'payment_method' => PaymentMethod::BankTransfer,
+            'fulfillment_method' => 'pickup',
+            'subtotal' => 20, 'total' => 20,
+        ]);
+
+        $order->update(['status' => OrderStatus::ReadyForPickup]);
+
+        Mail::assertQueued(OrderReadyForPickupMail::class, fn ($mail) => $mail->hasTo('test@example.com'));
+        $this->assertNotNull($order->fresh()->ready_for_pickup_at);
+    }
+
+    public function test_order_emails_reply_to_the_dealership_not_the_send_from_address(): void
+    {
+        $order = Order::create([
+            'customer_name' => 'Test', 'customer_email' => 'test@example.com',
+            'status' => OrderStatus::Paid,
+            'payment_method' => PaymentMethod::BankTransfer,
+            'fulfillment_method' => 'shipping',
+            'subtotal' => 20, 'total' => 20,
+        ]);
+
+        $mail = new OrderReceiptMail($order);
+        $replyTo = $mail->envelope()->replyTo[0]->address;
+
+        $this->assertSame('info@staryamaha.com.au', $replyTo);
     }
 
     public function test_pos_orders_without_an_email_are_not_sent_anything(): void

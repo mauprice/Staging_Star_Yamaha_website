@@ -17,7 +17,7 @@ class Order extends Model
         'status', 'payment_method', 'fulfillment_method', 'currency',
         'subtotal', 'shipping_total', 'total', 'tax_total',
         'notes', 'customer_notes', 'ip_address', 'user_agent',
-        'placed_at', 'paid_at', 'shipped_at', 'completed_at', 'cancelled_at',
+        'placed_at', 'paid_at', 'shipped_at', 'ready_for_pickup_at', 'completed_at', 'cancelled_at',
     ];
 
     protected $casts = [
@@ -31,6 +31,7 @@ class Order extends Model
         'placed_at' => 'datetime',
         'paid_at' => 'datetime',
         'shipped_at' => 'datetime',
+        'ready_for_pickup_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];

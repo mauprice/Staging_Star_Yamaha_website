@@ -25,11 +25,13 @@
         @if($order->status->value === 'awaiting_bank_deposit')
         <h1 class="text-3xl font-black text-gray-900 mb-2">Order Received</h1>
         <p class="text-gray-500 mb-1">Order <span class="font-black text-gray-900">{{ $order->order_number }}</span></p>
-        <p class="text-gray-500 mb-8">Bank deposit instructions have been sent to {{ $order->customer_email }}. Your order will ship once we've confirmed the deposit.</p>
+        <p class="text-gray-500 mb-1">Bank deposit instructions have been sent to {{ $order->customer_email }}. Your order will ship once we've confirmed the deposit.</p>
+        <p class="text-xs text-gray-400 mb-8">Can't see the email? Check your junk/spam folder — it sometimes ends up there.</p>
         @else
         <h1 class="text-3xl font-black text-gray-900 mb-2">Thank you for your order!</h1>
         <p class="text-gray-500 mb-1">Order <span class="font-black text-gray-900">{{ $order->order_number }}</span></p>
-        <p class="text-gray-500 mb-8">A receipt has been sent to {{ $order->customer_email }}.</p>
+        <p class="text-gray-500 mb-1">A receipt has been sent to {{ $order->customer_email }}.</p>
+        <p class="text-xs text-gray-400 mb-8">Can't see the email? Check your junk/spam folder — it sometimes ends up there.</p>
         @endif
 
         <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 text-left mb-8">

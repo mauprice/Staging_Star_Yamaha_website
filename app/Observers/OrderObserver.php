@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\OrderStatus;
 use App\Mail\OrderCompletedMail;
+use App\Mail\OrderReadyForPickupMail;
 use App\Mail\OrderReceiptMail;
 use App\Mail\OrderShippedMail;
 use App\Models\Order;
@@ -42,6 +43,10 @@ class OrderObserver
             $order->shipped_at ??= now();
         }
 
+        if ($order->status === OrderStatus::ReadyForPickup && $order->getOriginal('status') !== OrderStatus::ReadyForPickup) {
+            $order->ready_for_pickup_at ??= now();
+        }
+
         if ($order->status === OrderStatus::Completed && $order->getOriginal('status') !== OrderStatus::Completed) {
             $order->completed_at ??= now();
         }
@@ -63,6 +68,10 @@ class OrderObserver
 
         if ($order->status === OrderStatus::Shipped && $from !== OrderStatus::Shipped) {
             DB::afterCommit(fn () => Mail::to($order->customer_email)->queue(new OrderShippedMail($order)));
+        }
+
+        if ($order->status === OrderStatus::ReadyForPickup && $from !== OrderStatus::ReadyForPickup) {
+            DB::afterCommit(fn () => Mail::to($order->customer_email)->queue(new OrderReadyForPickupMail($order)));
         }
 
         if ($order->status === OrderStatus::Completed && $from !== OrderStatus::Completed) {
