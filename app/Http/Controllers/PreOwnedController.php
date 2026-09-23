@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Mail\SellMyBikeMail;
 use App\Models\PreOwnedListing;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -51,8 +53,21 @@ class PreOwnedController extends Controller
             'message'       => 'nullable|string|max:1500',
         ]);
 
-        Mail::to(env('BOOKING_EMAIL', 'sales@staryamaha.com.au'))
-            ->send(new SellMyBikeMail($data));
+        $notificationEmails = Setting::getEmailList(
+            'service_booking_email',
+            env('BOOKING_EMAIL', 'info@staryamaha.com.au')
+        );
+
+        try {
+            Mail::to($notificationEmails)
+                ->send(new SellMyBikeMail($data));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send sell-my-bike valuation request email', [
+                'to'    => $notificationEmails,
+                'email' => $data['email'],
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->route('yamaha.sell')
             ->with('success', "Thanks {$data['name']}! We've received your valuation request and will be in touch shortly.");

@@ -260,7 +260,7 @@
     >
         <div class="sd-settings-label">
             <strong>Notification Email(s)</strong>
-            <span>New service booking requests are emailed to each address in this list.</span>
+            <span>New service booking requests and Sell My Bike valuation requests are emailed to each address in this list.</span>
         </div>
         <div class="sd-tags-input" style="width: 420px;" @click="$el.querySelector('input').focus()">
             <template x-for="(email, index) in emails" :key="index">
