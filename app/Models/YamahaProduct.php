@@ -25,7 +25,18 @@ class YamahaProduct extends Model
         'recommended_retail_nz' => 'decimal:2',
         'product_spec'          => 'array',
         'synced_at'             => 'datetime',
+        'hidden'                => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        // Manually hidden products (see the `hidden` migration) are excluded from
+        // every query by default — list pages, product pages, everything — without
+        // touching each controller call site. Not in $fillable, and yamaha:sync never
+        // writes it, so a hide survives every future re-sync. Use withoutGlobalScope
+        // ('hidden') / withoutGlobalScopes() to reach a hidden row (e.g. from Tinker).
+        static::addGlobalScope('hidden', fn ($query) => $query->where('hidden', false));
+    }
 
     public function banners(): HasMany
     {

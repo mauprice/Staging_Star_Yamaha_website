@@ -42,6 +42,100 @@ class SyncYamahaProducts extends Command
         return config('services.yamaha_dealers.base_url') . '/' . $path;
     }
 
+    // product_group (as stored on YamahaProduct) -> the /images/yamaha/{slug}/
+    // folder used for locally-hosted photos.
+    private const GROUP_SLUGS = [
+        'Road'       => 'road',
+        'Off Road'   => 'off-road',
+        'ATV/ROV'    => 'atv-rov',
+        'Golf Car'   => 'golf-car',
+        'Utility'    => 'golf-car',
+        'Watercraft' => 'watercraft',
+    ];
+
+    /**
+     * Best-effort local fallback for products the API gives no image data for at
+     * all — a real, recurring gap in Yamaha's feed for a handful of models at any
+     * given time. Searches the hand-curated "Yamaha Images" library — not in git,
+     * dev-machine-only, so this quietly no-ops wherever that folder doesn't exist —
+     * for a filename matching the model name, and copies/converts it into the
+     * /images/yamaha/{group}/ convention used for every other locally-hosted photo.
+     */
+    private function findLocalFallbackImage(string $modelName, string $productGroup): ?string
+    {
+        $libraryPath = public_path('Yamaha Images');
+
+        if (! is_dir($libraryPath)) {
+            return null;
+        }
+
+        $groupSlug = self::GROUP_SLUGS[$productGroup] ?? null;
+        $modelSlug = strtolower(str_replace(' ', '-', $modelName));
+        $destRelative = "images/yamaha/{$groupSlug}/{$modelSlug}.jpg";
+        $destPath = public_path($destRelative);
+
+        // Already converted by a previous sync run.
+        if ($groupSlug && file_exists($destPath)) {
+            return '/' . $destRelative;
+        }
+
+        $normalize = fn (string $s) => preg_replace('/[^a-z0-9]/', '', strtolower($s));
+        $target = $normalize($modelName);
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($libraryPath, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if (! preg_match('/\.(avif|jpe?g|png|webp)$/i', $file->getFilename())) {
+                continue;
+            }
+
+            if ($normalize($file->getBasename('.' . $file->getExtension())) !== $target) {
+                continue;
+            }
+
+            if (! $groupSlug) {
+                return null;
+            }
+
+            if (! $this->convertToLocalJpeg($file->getPathname(), $destPath)) {
+                return null;
+            }
+
+            return '/' . $destRelative;
+        }
+
+        return null;
+    }
+
+    private function convertToLocalJpeg(string $sourcePath, string $destPath): bool
+    {
+        $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+
+        $image = match ($extension) {
+            'avif'        => @imagecreatefromavif($sourcePath),
+            'jpg', 'jpeg' => @imagecreatefromjpeg($sourcePath),
+            'png'         => @imagecreatefrompng($sourcePath),
+            'webp'        => @imagecreatefromwebp($sourcePath),
+            default       => null,
+        };
+
+        if (! $image) {
+            Log::warning('Yamaha sync: could not read local fallback image', ['path' => $sourcePath]);
+            return false;
+        }
+
+        if (! is_dir(dirname($destPath))) {
+            mkdir(dirname($destPath), 0755, true);
+        }
+
+        $ok = imagejpeg($image, $destPath, 90);
+        imagedestroy($image);
+
+        return $ok;
+    }
+
     public function handle(): int
     {
         $country = $this->option('country');
@@ -189,11 +283,24 @@ class SyncYamahaProducts extends Command
                 ->body();
             $brochureUrl = trim($brochureUrl, '"');
 
+            $modelName = $summary['modelName'] ?? null;
+            $summaryImage = isset($summary['summaryImage']) ? trim($summary['summaryImage']) : null;
+            $usedLocalFallback = false;
+
+            if (! $summaryImage && $modelName) {
+                $summaryImage = $this->findLocalFallbackImage($modelName, $summary['productGroup'] ?? '');
+                $usedLocalFallback = (bool) $summaryImage;
+            }
+
             // Upsert the product
-            YamahaProduct::updateOrCreate(
+            // withoutGlobalScopes: a hidden product (see the `hidden` column/global
+            // scope on the model) must still be found and refreshed here, or this
+            // would try to INSERT a duplicate ID instead of UPDATE-ing it. `hidden`
+            // itself is never in this update payload, so the flag survives untouched.
+            YamahaProduct::withoutGlobalScopes()->updateOrCreate(
                 ['id' => $id],
                 [
-                    'model_name'          => $summary['modelName'] ?? null,
+                    'model_name'          => $modelName,
                     'product_type'        => $summary['productType'] ?? null,
                     'year_model'          => $summary['yearModel'] ?? null,
                     'division'            => $summary['division'] ?? null,
@@ -203,7 +310,7 @@ class SyncYamahaProducts extends Command
                     'item_description'    => $summary['itemDescription'] ?? null,
                     'description'         => $summary['description'] ?? null,
                     'long_description'    => $longDescription,
-                    'summary_image'       => isset($summary['summaryImage']) ? trim($summary['summaryImage']) : null,
+                    'summary_image'       => $summaryImage,
                     'recommended_retail'  => $price,
                     'recommended_retail_nz' => $priceNz,
                     'brochure_url'        => $brochureUrl ?: null,
@@ -213,7 +320,7 @@ class SyncYamahaProducts extends Command
             );
 
             // Sync related data
-            $this->syncBanners($id);
+            $this->syncBanners($id, $usedLocalFallback ? $summaryImage : null);
             $this->syncColors($id);
             $this->syncFeatures($id);
             $this->syncImages($id);
@@ -223,7 +330,7 @@ class SyncYamahaProducts extends Command
         }
     }
 
-    private function syncBanners(int $id): void
+    private function syncBanners(int $id, ?string $localFallbackImage = null): void
     {
         $response = $this->dealersApi()->timeout(15)->get($this->dealersUrl("GetProductBanners/{$id}"));
 
@@ -238,23 +345,40 @@ class SyncYamahaProducts extends Command
         YamahaBanner::where('product_id', $id)->delete();
 
         $banners = $response->json();
+        $hasType1 = false;
 
-        if (! is_array($banners)) {
-            return;
+        if (is_array($banners)) {
+            foreach ($banners as $banner) {
+                $variants = $this->parseImageOptions($banner['imageOptions'] ?? null);
+                $imageType = $banner['imageType'] ?? null;
+                $hasType1 = $hasType1 || $imageType == 1;
+
+                YamahaBanner::create([
+                    'id'            => $banner['id'],
+                    'product_id'    => $id,
+                    'image'         => $banner['image'] ?? null,
+                    'image_mobile'  => $variants['mobile'],
+                    'image_tablet'  => $variants['tablet'],
+                    'image_options' => $banner['imageOptions'] ?? null,
+                    'image_type'    => $imageType,
+                    'active'        => $banner['active'] ?? true,
+                ]);
+            }
         }
 
-        foreach ($banners as $banner) {
-            $variants = $this->parseImageOptions($banner['imageOptions'] ?? null);
-
+        // The API gave nothing usable for a hero image, but a local fallback photo
+        // was found for the product's summary_image — reuse it as the hero banner
+        // too, same as summary_image, so the product/category-page hero isn't blank.
+        if (! $hasType1 && $localFallbackImage) {
             YamahaBanner::create([
-                'id'            => $banner['id'],
+                'id'            => (int) YamahaBanner::max('id') + 1,
                 'product_id'    => $id,
-                'image'         => $banner['image'] ?? null,
-                'image_mobile'  => $variants['mobile'],
-                'image_tablet'  => $variants['tablet'],
-                'image_options' => $banner['imageOptions'] ?? null,
-                'image_type'    => $banner['imageType'] ?? null,
-                'active'        => $banner['active'] ?? true,
+                'image'         => $localFallbackImage,
+                'image_mobile'  => $localFallbackImage,
+                'image_tablet'  => $localFallbackImage,
+                'image_options' => null,
+                'image_type'    => 1,
+                'active'        => true,
             ]);
         }
     }
