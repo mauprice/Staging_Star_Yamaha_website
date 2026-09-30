@@ -236,17 +236,27 @@ class YamahaController extends Controller
             abort(404);
         }
 
-        // Collect all hero banners across every product in this category for the slider,
-        // keeping the mobile/tablet/desktop crop variants together so the view can
-        // render a responsive <picture> instead of forcing the desktop crop everywhere.
+        // One slide per product, using its primary hero banner where one exists —
+        // pulling every hero banner per product dragged in secondary/dead CDN shots
+        // as blank/duplicate slides. Falls back to summary_image/color image (same
+        // priority as the product card) because some products have no image_type=1
+        // banner at all, which would otherwise leave that slide blank.
         $sliderImages = $products
-            ->flatMap(fn ($p) => $p->heroBanners)
-            ->filter(fn ($banner) => $banner->image)
-            ->map(fn ($banner) => [
-                'mobile'  => $banner->image_mobile,
-                'tablet'  => $banner->image_tablet,
-                'desktop' => $banner->image,
-            ])
+            ->map(function ($p) {
+                $banner = $p->heroBanners->first();
+                $image = $banner?->image ?? $p->summary_image ?? $p->colors->first()?->color_image;
+
+                if (! $image) {
+                    return null;
+                }
+
+                return [
+                    'mobile'  => $banner?->image_mobile,
+                    'tablet'  => $banner?->image_tablet,
+                    'desktop' => $image,
+                ];
+            })
+            ->filter()
             ->values();
 
         return view('yamaha.category', compact('group', 'groupName', 'category', 'subCategoryName', 'products', 'sliderImages'));
