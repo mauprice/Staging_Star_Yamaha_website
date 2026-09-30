@@ -52,4 +52,11 @@ return [
         'mode' => env('PAYPAL_MODE', 'sandbox'),
     ],
 
+    'yamaha_dealers' => [
+        'base_url' => env('YAMAHA_DEALERS_API_URL', 'https://api01.yamahaservices.com.au:8077/ws/rest/v1/dealers'),
+        'username' => env('YAMAHA_DEALERS_API_USERNAME'),
+        'password' => env('YAMAHA_DEALERS_API_PASSWORD'),
+        'api_key'  => env('YAMAHA_DEALERS_API_KEY'),
+    ],
+
 ];

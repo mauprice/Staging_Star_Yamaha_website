@@ -21,7 +21,26 @@ class SyncYamahaProducts extends Command
 
     protected $description = 'Sync all Yamaha product data from the Yamaha Motor API';
 
-    private string $baseUrl = 'https://api.yamaha-motor.com.au/api/products';
+    /**
+     * The old api.yamaha-motor.com.au host is sunset — product endpoints return
+     * stale/dead image links and GetPromotions returns an empty array. Everything
+     * now comes from the Yamaha Dealers-API production gateway, which mirrors the
+     * same endpoint shapes (one rename: GetProductFeaturesByID -> GetProductFeatures)
+     * under camelCase keys, and serves images from Yamaha's Scene7 CDN instead of
+     * their own dead one.
+     */
+    private function dealersApi(): \Illuminate\Http\Client\PendingRequest
+    {
+        $config = config('services.yamaha_dealers');
+
+        return Http::withBasicAuth($config['username'], $config['password'])
+            ->withHeaders(['X-API-Key' => $config['api_key']]);
+    }
+
+    private function dealersUrl(string $path): string
+    {
+        return config('services.yamaha_dealers.base_url') . '/' . $path;
+    }
 
     public function handle(): int
     {
@@ -86,7 +105,7 @@ class SyncYamahaProducts extends Command
     {
         $this->info('Fetching product summaries...');
 
-        $response = Http::timeout(60)->get("{$this->baseUrl}/GetAllProductSummaries/{$country}");
+        $response = $this->dealersApi()->timeout(60)->get($this->dealersUrl("GetAllProductSummaries/{$country}"));
 
         if (! $response->successful()) {
             $this->error('Failed to fetch product summaries.');
@@ -129,7 +148,8 @@ class SyncYamahaProducts extends Command
             ]);
 
             // Yamaha's API sits behind Imperva bot-protection; a brief pause between
-            // products (each of which fires 6 requests) reduces the odds of tripping it.
+            // products (each of which fires several requests) reduces the odds of
+            // tripping it.
             usleep(100_000);
         }
 
@@ -139,7 +159,7 @@ class SyncYamahaProducts extends Command
 
     private function syncSingleProduct(array $summary, string $country): void
     {
-        $id = $summary['ID'] ?? null;
+        $id = $summary['id'] ?? null;
 
         if (! $id) {
             return;
@@ -147,8 +167,8 @@ class SyncYamahaProducts extends Command
 
         try {
             // Fetch full product detail (includes specs and pricing)
-            $detail = Http::timeout(30)
-                ->get("{$this->baseUrl}/GetProductByID/{$id}")
+            $detail = $this->dealersApi()->timeout(30)
+                ->get($this->dealersUrl("GetProductByID/{$id}"))
                 ->json();
 
             $price = null;
@@ -157,21 +177,15 @@ class SyncYamahaProducts extends Command
             $productSpec = null;
 
             if ($detail) {
-                $price = isset($detail['RecommendedRetail'])
-                    ? (float) preg_replace('/[^0-9.]/', '', $detail['RecommendedRetail'])
-                    : null;
-
-                $priceNz = isset($detail['RecommendedRetail_NZ'])
-                    ? (float) preg_replace('/[^0-9.]/', '', $detail['RecommendedRetail_NZ'])
-                    : null;
-
-                $longDescription = $detail['LongDescription'] ?? null;
-                $productSpec     = $detail['ProductSpec'] ?? null;
+                $price = isset($detail['recommendedRetail']) ? (float) $detail['recommendedRetail'] : null;
+                $priceNz = isset($detail['recommendedRetailNZ']) ? (float) $detail['recommendedRetailNZ'] : null;
+                $longDescription = $detail['longDescription'] ?? null;
+                $productSpec     = $detail['productSpec'] ?? null;
             }
 
-            // Fetch brochure URL
-            $brochureUrl = Http::timeout(15)
-                ->get("{$this->baseUrl}/GetBrochureByProductId/{$id}")
+            // Fetch brochure URL (204/empty body when a product has none)
+            $brochureUrl = $this->dealersApi()->timeout(15)
+                ->get($this->dealersUrl("GetBrochureByProductId/{$id}"))
                 ->body();
             $brochureUrl = trim($brochureUrl, '"');
 
@@ -179,17 +193,17 @@ class SyncYamahaProducts extends Command
             YamahaProduct::updateOrCreate(
                 ['id' => $id],
                 [
-                    'model_name'          => $summary['ModelName'] ?? null,
-                    'product_type'        => $summary['ProductType'] ?? null,
-                    'year_model'          => $summary['YearModel'] ?? null,
-                    'division'            => $summary['Division'] ?? null,
-                    'product_group'       => $summary['ProductGroup'] ?? null,
-                    'sub_category'        => $summary['SubCategory'] ?? null,
-                    'primary_category'    => $summary['PrimaryCategory'] ?? null,
-                    'item_description'    => $summary['ItemDescription'] ?? null,
-                    'description'         => $summary['Description'] ?? null,
+                    'model_name'          => $summary['modelName'] ?? null,
+                    'product_type'        => $summary['productType'] ?? null,
+                    'year_model'          => $summary['yearModel'] ?? null,
+                    'division'            => $summary['division'] ?? null,
+                    'product_group'       => $summary['productGroup'] ?? null,
+                    'sub_category'        => $summary['subCategory'] ?? null,
+                    'primary_category'    => $summary['primaryCategory'] ?? null,
+                    'item_description'    => $summary['itemDescription'] ?? null,
+                    'description'         => $summary['description'] ?? null,
                     'long_description'    => $longDescription,
-                    'summary_image'       => $summary['SummaryImage'] ?? null,
+                    'summary_image'       => isset($summary['summaryImage']) ? trim($summary['summaryImage']) : null,
                     'recommended_retail'  => $price,
                     'recommended_retail_nz' => $priceNz,
                     'brochure_url'        => $brochureUrl ?: null,
@@ -211,28 +225,36 @@ class SyncYamahaProducts extends Command
 
     private function syncBanners(int $id): void
     {
-        $banners = Http::timeout(15)
-            ->get("{$this->baseUrl}/GetProductBanners/{$id}")
-            ->json();
+        $response = $this->dealersApi()->timeout(15)->get($this->dealersUrl("GetProductBanners/{$id}"));
 
-        if (! is_array($banners)) {
+        // A successful response with no usable body means "this product genuinely
+        // has none" — clear stale rows so the page omits the section instead of
+        // showing a leftover broken image. Only an unsuccessful request (network
+        // error, non-2xx) should leave existing data untouched.
+        if (! $response->successful()) {
             return;
         }
 
         YamahaBanner::where('product_id', $id)->delete();
 
+        $banners = $response->json();
+
+        if (! is_array($banners)) {
+            return;
+        }
+
         foreach ($banners as $banner) {
-            $variants = $this->parseImageOptions($banner['ImageOptions'] ?? null);
+            $variants = $this->parseImageOptions($banner['imageOptions'] ?? null);
 
             YamahaBanner::create([
-                'id'            => $banner['Id'],
+                'id'            => $banner['id'],
                 'product_id'    => $id,
-                'image'         => $banner['Image'] ?? null,
+                'image'         => $banner['image'] ?? null,
                 'image_mobile'  => $variants['mobile'],
                 'image_tablet'  => $variants['tablet'],
-                'image_options' => $banner['ImageOptions'] ?? null,
-                'image_type'    => $banner['ImageType'] ?? null,
-                'active'        => $banner['Active'] ?? true,
+                'image_options' => $banner['imageOptions'] ?? null,
+                'image_type'    => $banner['imageType'] ?? null,
+                'active'        => $banner['active'] ?? true,
             ]);
         }
     }
@@ -266,63 +288,80 @@ class SyncYamahaProducts extends Command
 
     private function syncColors(int $id): void
     {
-        $colors = Http::timeout(15)
-            ->get("{$this->baseUrl}/GetProductColors/{$id}")
-            ->json();
+        $response = $this->dealersApi()->timeout(15)->get($this->dealersUrl("GetProductColors/{$id}"));
 
-        if (! is_array($colors)) {
+        if (! $response->successful()) {
             return;
         }
 
         YamahaColor::where('product_id', $id)->delete();
 
+        $colors = $response->json();
+
+        if (! is_array($colors)) {
+            return;
+        }
+
         foreach ($colors as $color) {
             YamahaColor::create([
                 'product_id'  => $id,
-                'color_name'  => $color['ColorName'] ?? null,
-                'color_code'  => $color['ColorCode'] ?? null,
-                'color_image' => $color['ColorImage'] ?? null,
+                'color_name'  => $color['colorName'] ?? null,
+                'color_code'  => $color['colorCode'] ?? null,
+                'color_image' => $color['colorImage'] ?? null,
             ]);
         }
     }
 
     private function syncFeatures(int $id): void
     {
-        $features = Http::timeout(15)
-            ->get("{$this->baseUrl}/GetProductFeaturesByID/{$id}")
-            ->json();
+        // Renamed from GetProductFeaturesByID on the old (dead) API.
+        $response = $this->dealersApi()->timeout(15)->get($this->dealersUrl("GetProductFeatures/{$id}"));
 
-        if (! is_array($features)) {
+        if (! $response->successful()) {
             return;
         }
 
         YamahaFeature::where('product_id', $id)->delete();
 
+        $features = $response->json();
+
+        if (! is_array($features)) {
+            return;
+        }
+
         foreach ($features as $feature) {
             YamahaFeature::create([
                 'product_id'  => $id,
-                'title'       => $feature['Title'] ?? null,
-                'type'        => $feature['Type'] ?? null,
-                'description' => $feature['Description'] ?? null,
-                'image'       => $feature['Image'] ?? null,
+                'title'       => $feature['title'] ?? null,
+                'type'        => $feature['type'] ?? null,
+                'description' => $feature['description'] ?? null,
+                'image'       => $feature['image'] ?? null,
             ]);
         }
     }
 
     private function syncImages(int $id): void
     {
-        $images = Http::timeout(15)
-            ->get("{$this->baseUrl}/GetOverviewImages/{$id}")
-            ->json();
+        $response = $this->dealersApi()->timeout(15)->get($this->dealersUrl("GetOverviewImages/{$id}"));
 
-        if (! is_array($images)) {
+        if (! $response->successful()) {
             return;
         }
 
         YamahaImage::where('product_id', $id)->delete();
 
+        $images = $response->json();
+
+        if (! is_array($images)) {
+            return;
+        }
+
         foreach ($images as $url) {
-            if ($url) {
+            // The API sometimes serialises a missing image as the literal string
+            // "null" rather than JSON null.
+            $url = is_string($url) ? trim($url) : null;
+
+            if ($url && strtolower($url) !== 'null') {
                 YamahaImage::create([
                     'product_id' => $id,
                     'image_url'  => $url,
@@ -343,9 +382,15 @@ class SyncYamahaProducts extends Command
         ]);
 
         try {
-            $promotions = Http::timeout(30)
-                ->get("{$this->baseUrl}/GetPromotions/{$country}")
-                ->json();
+            $response = $this->dealersApi()->timeout(30)->get($this->dealersUrl("GetPromotions/{$country}"));
+
+            if (! $response->successful()) {
+                $this->error('Failed to fetch promotions.');
+                Log::error('Yamaha sync: failed to fetch promotions', ['status' => $response->status()]);
+                return;
+            }
+
+            $promotions = $response->json();
 
             if (! is_array($promotions)) {
                 return;
@@ -353,19 +398,25 @@ class SyncYamahaProducts extends Command
 
             YamahaPromotion::where('country', $country)->delete();
 
-            foreach ($promotions as $promo) {
+            foreach ($promotions as $index => $promo) {
+                $type = trim((string) ($promo['type'] ?? ''));
+
                 YamahaPromotion::create([
-                    'id'               => $promo['ID'],
-                    'head'             => HtmlEntityDecoder::decode($promo['Head'] ?? null),
-                    'brief'            => HtmlEntityDecoder::decode($promo['Brief'] ?? null),
-                    'brief_image'      => $promo['BriefImage'] ?? null,
-                    'full_content_url' => $promo['FullContentUrl'] ?? null,
-                    'content'          => HtmlEntityDecoder::decode($promo['Content'] ?? null),
-                    'image'            => $promo['Image'] ?? null,
-                    'type'             => $promo['Type'] ?? null,
+                    'id'               => $promo['id'],
+                    'head'             => HtmlEntityDecoder::decode($promo['head'] ?? null),
+                    'brief'            => HtmlEntityDecoder::decode($promo['brief'] ?? null),
+                    'brief_image'      => isset($promo['briefImage']) ? trim($promo['briefImage']) : null,
+                    'full_content_url' => $promo['fullContentUrl'] ?? null,
+                    'content'          => HtmlEntityDecoder::decode($promo['content'] ?? null),
+                    'image'            => isset($promo['image']) ? trim($promo['image']) : null,
+                    'type'             => $type !== '' ? $type : null,
+                    // The API returns this space-padded; trust our own request param
+                    // instead, or the delete-before-reinsert above silently stops
+                    // matching existing rows on the next run and crashes on a
+                    // duplicate primary key.
                     'country'          => $country,
-                    'active'           => $promo['Active'] ?? true,
-                    'sort_index'       => $promo['SortIndex'] ?? 0,
+                    'active'           => $promo['active'] ?? true,
+                    'sort_index'       => $index,
                 ]);
             }
 
@@ -388,9 +439,15 @@ class SyncYamahaProducts extends Command
         ]);
 
         try {
-            $items = Http::timeout(30)
-                ->get("{$this->baseUrl}/GetNews/{$country}")
-                ->json();
+            $response = $this->dealersApi()->timeout(30)->get($this->dealersUrl("GetNews/{$country}"));
+
+            if (! $response->successful()) {
+                $this->error('Failed to fetch news.');
+                Log::error('Yamaha sync: failed to fetch news', ['status' => $response->status()]);
+                return;
+            }
+
+            $items = $response->json();
 
             if (! is_array($items)) {
                 return;
@@ -398,21 +455,21 @@ class SyncYamahaProducts extends Command
 
             YamahaNews::where('country', $country)->delete();
 
-            foreach ($items as $item) {
+            foreach ($items as $index => $item) {
                 YamahaNews::create([
-                    'id'               => $item['ID'],
-                    'head'             => HtmlEntityDecoder::decode($item['Head'] ?? null),
-                    'brief'            => HtmlEntityDecoder::decode($item['Brief'] ?? null),
-                    'brief_image'      => isset($item['BriefImage']) ? trim($item['BriefImage']) : null,
-                    'full_content_url' => $item['FullContentUrl'] ?? null,
-                    'content'          => HtmlEntityDecoder::decode($item['Content'] ?? null),
-                    'image'            => isset($item['Image']) ? trim($item['Image']) : null,
-                    'image_options'    => $item['ImageOptions'] ?? null,
-                    'type'             => HtmlEntityDecoder::decode($item['Type'] ?? null),
-                    'other_types'      => $item['OtherTypes'] ?? null,
+                    'id'               => $item['id'],
+                    'head'             => HtmlEntityDecoder::decode($item['head'] ?? null),
+                    'brief'            => HtmlEntityDecoder::decode($item['brief'] ?? null),
+                    'brief_image'      => isset($item['briefImage']) ? trim($item['briefImage']) : null,
+                    'full_content_url' => $item['fullContentUrl'] ?? null,
+                    'content'          => HtmlEntityDecoder::decode($item['content'] ?? null),
+                    'image'            => isset($item['image']) ? trim($item['image']) : null,
+                    'image_options'    => $item['imageOptions'] ?? null,
+                    'type'             => null,
+                    'other_types'      => $item['otherTypes'] ?? null,
                     'country'          => $country,
-                    'active'           => $item['Active'] ?? true,
-                    'sort_index'       => $item['SortIndex'] ?? 0,
+                    'active'           => $item['active'] ?? true,
+                    'sort_index'       => $index,
                 ]);
             }
 
