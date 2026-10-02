@@ -589,7 +589,7 @@ class SyncYamahaProducts extends Command
                     'content'          => HtmlEntityDecoder::decode($item['content'] ?? null),
                     'image'            => isset($item['image']) ? trim($item['image']) : null,
                     'image_options'    => $item['imageOptions'] ?? null,
-                    'type'             => null,
+                    'type'             => $this->primaryNewsType($item['otherTypes'] ?? null),
                     'other_types'      => $item['otherTypes'] ?? null,
                     'country'          => $country,
                     'active'           => $item['active'] ?? true,
@@ -602,5 +602,20 @@ class SyncYamahaProducts extends Command
             Log::error('Yamaha sync: failed to sync news', ['error' => $e->getMessage()]);
             $this->error('Failed to sync news: ' . $e->getMessage());
         }
+    }
+
+    // The Dealers-API dropped the old single `Type` field in favour of a
+    // comma-separated `otherTypes` tag list (e.g. "Road,Motorcycle") — the
+    // first tag is the equivalent primary category the rest of the app
+    // (NewsController's Outboard filter, the category dropdown) expects.
+    private function primaryNewsType(?string $otherTypes): ?string
+    {
+        if (! $otherTypes) {
+            return null;
+        }
+
+        $first = trim(explode(',', $otherTypes)[0]);
+
+        return $first !== '' ? $first : null;
     }
 }
