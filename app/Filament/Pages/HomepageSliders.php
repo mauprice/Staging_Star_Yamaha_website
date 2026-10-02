@@ -27,16 +27,20 @@ class HomepageSliders extends Page
 
     public bool $show_honda_offers = true;
 
+    public bool $show_specials_offers_section = true;
+
     public function mount(): void
     {
-        $this->show_yamaha_promotions = Setting::get('slider_show_yamaha_promotions', '1') === '1';
-        $this->show_honda_offers      = Setting::get('slider_show_honda_offers', '1') === '1';
+        $this->show_yamaha_promotions       = Setting::get('slider_show_yamaha_promotions', '1') === '1';
+        $this->show_honda_offers            = Setting::get('slider_show_honda_offers', '1') === '1';
+        $this->show_specials_offers_section = Setting::get('homepage_show_specials_offers', '1') === '1';
     }
 
     public function save(): void
     {
         Setting::set('slider_show_yamaha_promotions', $this->show_yamaha_promotions ? '1' : '0');
         Setting::set('slider_show_honda_offers', $this->show_honda_offers ? '1' : '0');
+        Setting::set('homepage_show_specials_offers', $this->show_specials_offers_section ? '1' : '0');
 
         Notification::make()
             ->title('Settings saved')

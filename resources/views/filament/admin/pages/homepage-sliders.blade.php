@@ -270,6 +270,27 @@
 
     </div>
 
+    {{-- Specials & Offers homepage section --}}
+    <div class="hs-card hs-margin-top">
+
+        <div class="hs-card-header">
+            <h3>Homepage Sections</h3>
+            <p>Turn other homepage sections on or off.</p>
+        </div>
+
+        <div class="hs-row">
+            <div class="hs-row-label">
+                <strong>Specials &amp; Offers</strong>
+                <span>Show the "Specials &amp; Offers" grid further down the homepage.</span>
+            </div>
+            <label class="hs-switch">
+                <input type="checkbox" wire:model.live="show_specials_offers_section">
+                <span class="hs-switch-track"><span class="hs-switch-thumb"></span></span>
+            </label>
+        </div>
+
+    </div>
+
     {{-- Individual Honda offers --}}
     <div class="hs-card hs-margin-top">
 

@@ -63,7 +63,9 @@ class YamahaController extends Controller
     public function index(): View
     {
         $promotions = YamahaPromotion::where('active', true)
-            ->where('type', '!=', 'Outboard')
+            ->where(function ($query) {
+                $query->whereNull('type')->orWhere('type', 'not like', 'Outboard%');
+            })
             ->orderBy('sort_index')
             ->get();
 
@@ -72,6 +74,7 @@ class YamahaController extends Controller
         // slider without touching the underlying data.
         $showYamahaSlides = Setting::get('slider_show_yamaha_promotions', '1') === '1';
         $showHondaSlides  = Setting::get('slider_show_honda_offers', '1') === '1';
+        $showSpecialsOffers = Setting::get('homepage_show_specials_offers', '1') === '1';
 
         // Yamaha promo images are wide banners cut for this slider, so they crop
         // to fill it. Honda offer images are square social-tile graphics with
@@ -136,7 +139,7 @@ class YamahaController extends Controller
             }
         }
 
-        return view('yamaha.index', compact('promotions', 'groupPreviews', 'hondaCategoryPreviews', 'slides'));
+        return view('yamaha.index', compact('promotions', 'groupPreviews', 'hondaCategoryPreviews', 'slides', 'showSpecialsOffers'));
     }
 
     public function group(string $group): View

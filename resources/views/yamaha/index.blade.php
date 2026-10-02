@@ -126,7 +126,7 @@
     </div>
 
     {{-- Current Promotions --}}
-    @if($promotions->where('active', true)->isNotEmpty())
+    @if($showSpecialsOffers && $promotions->where('active', true)->isNotEmpty())
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p class="text-xs uppercase tracking-[0.3em] font-black text-brand mb-1">Current Deals</p>
         <h2 class="text-3xl font-black uppercase text-gray-900 mb-8 tracking-tight">Specials & Offers</h2>
