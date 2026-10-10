@@ -107,6 +107,18 @@
                     4 => 'lg:grid-cols-4',
                     default => 'lg:grid-cols-5',
                 };
+
+                // Same reasoning as $yamahaRangeLgCols — without this, a short
+                // Honda list (e.g. 3 of 5 categories visible) stretches across
+                // unused grid tracks and renders noticeably smaller than the
+                // Yamaha row above it.
+                $hondaRangeLgCols = match (min(count($hondaCategoryPreviews ?? []), 5)) {
+                    1 => 'lg:grid-cols-1',
+                    2 => 'lg:grid-cols-2',
+                    3 => 'lg:grid-cols-3',
+                    4 => 'lg:grid-cols-4',
+                    default => 'lg:grid-cols-5',
+                };
             @endphp
             <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Yamaha Range</p>
             <div class="grid grid-cols-2 sm:grid-cols-3 {{ $yamahaRangeLgCols }} gap-3 md:gap-4">
@@ -123,7 +135,7 @@
 
             @if(!empty($hondaCategoryPreviews))
             <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mt-5 mb-2">Honda Range</p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 {{ $hondaRangeLgCols }} gap-3 md:gap-4">
                 @foreach($hondaCategoryPreviews as $slug => $preview)
                 <x-media-tile
                     href="{{ route('honda.category', $slug) }}"
