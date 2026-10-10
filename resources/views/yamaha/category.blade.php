@@ -84,18 +84,16 @@
             @foreach($products as $product)
             @php
                 $slug = strtolower(str_replace(' ', '-', $product->model_name));
-                $firstColorImg = $product->colors->first()?->color_image;
-                $image = $firstColorImg ?? $product->summary_image ?? $product->heroBanners->first()?->image;
             @endphp
             <x-product-card
                 href="{{ route('yamaha.product', [$group, $category, $slug]) }}"
-                image="{{ $image }}"
+                image="{{ $product->live_preview_image }}"
                 :imageAlt="$product->model_name"
                 fit="contain"
                 eyebrow="{{ $product->year_model }}"
                 title="{{ $product->model_name }}"
                 description="{{ $product->item_description }}"
-                data-colors="{{ json_encode($product->colors->pluck('color_image')->filter()->values()) }}">
+                data-colors="{{ json_encode($product->colors->pluck('color_image')->filter(fn ($url) => \App\Support\YamahaCdn::isLive($url))->values()) }}">
 
                 <div class="flex items-end justify-between">
                     @if($product->recommended_retail > 0)

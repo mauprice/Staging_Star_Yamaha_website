@@ -131,7 +131,7 @@
                     :imageAlt="$preview['label']"
                     label="{{ $preview['label'] }}"
                     sublabel="View Range →"
-                    ratio="16/10" />
+                    ratio="3/2" />
                 @endforeach
             </div>
             @endif

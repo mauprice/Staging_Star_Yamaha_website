@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\YamahaCdn;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -73,5 +74,17 @@ class YamahaProduct extends Model
     public function getSlugAttribute(): string
     {
         return strtolower(str_replace(' ', '-', $this->model_name));
+    }
+
+    /**
+     * Product-card image, skipping any candidate still pointing at Yamaha's
+     * decommissioned CDN (see YamahaCdn) instead of just taking whichever of
+     * color/summary/banner image sorts first and happens to be dead.
+     */
+    public function getLivePreviewImageAttribute(): ?string
+    {
+        return YamahaCdn::liveOrNull($this->colors->first()?->color_image)
+            ?? YamahaCdn::liveOrNull($this->summary_image)
+            ?? YamahaCdn::liveOrNull($this->heroBanners->first()?->image);
     }
 }

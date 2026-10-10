@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\YamahaProduct;
 use App\Models\YamahaPromotion;
 use App\Support\HondaCategories;
+use App\Support\YamahaCdn;
 use Honda\Catalog\Models\HondaModel;
 use Honda\Catalog\Models\HondaOffer;
 use Illuminate\Database\Eloquent\Builder;
@@ -240,20 +241,34 @@ class YamahaController extends Controller
         // pulling every hero banner per product dragged in secondary/dead CDN shots
         // as blank/duplicate slides. Falls back to summary_image/color image (same
         // priority as the product card) because some products have no image_type=1
-        // banner at all, which would otherwise leave that slide blank.
+        // banner at all, which would otherwise leave that slide blank. Each
+        // candidate is checked against YamahaCdn::isLive() first — several synced
+        // rows still carry image URLs on Yamaha's decommissioned CDN, which would
+        // otherwise render as a blank slide despite "having" an image.
         $sliderImages = $products
             ->map(function ($p) {
                 $banner = $p->heroBanners->first();
-                $image = $banner?->image ?? $p->summary_image ?? $p->colors->first()?->color_image;
+                $bannerImage = YamahaCdn::liveOrNull($banner?->image);
 
-                if (! $image) {
+                if ($bannerImage) {
+                    return [
+                        'mobile'  => $banner->image_mobile,
+                        'tablet'  => $banner->image_tablet,
+                        'desktop' => $bannerImage,
+                    ];
+                }
+
+                $fallback = YamahaCdn::liveOrNull($p->summary_image)
+                    ?? YamahaCdn::liveOrNull($p->colors->first()?->color_image);
+
+                if (! $fallback) {
                     return null;
                 }
 
                 return [
-                    'mobile'  => $banner?->image_mobile,
-                    'tablet'  => $banner?->image_tablet,
-                    'desktop' => $image,
+                    'mobile'  => null,
+                    'tablet'  => null,
+                    'desktop' => $fallback,
                 ];
             })
             ->filter()
@@ -327,6 +342,6 @@ class YamahaController extends Controller
 
     private function liveImage(?string $url): ?string
     {
-        return $url && ! str_contains($url, 'yamaha-motor.com.au') ? $url : null;
+        return YamahaCdn::liveOrNull($url);
     }
 }
