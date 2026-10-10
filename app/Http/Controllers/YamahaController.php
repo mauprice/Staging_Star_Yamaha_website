@@ -309,17 +309,24 @@ class YamahaController extends Controller
     }
 
     /**
-     * Yamaha's API has known gaps where a product gets no image data at all
-     * (acknowledged in SyncYamahaProducts' local-fallback-image comment) —
-     * picking whichever product sorts first in a group can land on one of
-     * those and leave a tile blank. Scans for the first product that
-     * actually has a usable image instead.
+     * Two separate gaps can leave a preview tile blank: a product with no
+     * image data at all (acknowledged in SyncYamahaProducts' local-fallback-
+     * image comment), or a product whose banner/summary image is still on
+     * Yamaha's decommissioned www.yamaha-motor.com.au CDN (every path on
+     * that host now 404s/403s, confirmed directly) rather than the live
+     * Dealers-API scene7 CDN. Scans for the first product with a genuinely
+     * live image instead of just taking whichever one sorts first.
      */
     private function previewImage(Builder $query): ?string
     {
         $product = $query->with('heroBanners')->get()
-            ->first(fn (YamahaProduct $p) => $p->heroBanners->first()?->image ?: $p->summary_image);
+            ->first(fn (YamahaProduct $p) => $this->liveImage($p->heroBanners->first()?->image) ?? $this->liveImage($p->summary_image));
 
-        return $product ? ($product->heroBanners->first()?->image ?: $product->summary_image) : null;
+        return $product ? ($this->liveImage($product->heroBanners->first()?->image) ?? $this->liveImage($product->summary_image)) : null;
+    }
+
+    private function liveImage(?string $url): ?string
+    {
+        return $url && ! str_contains($url, 'yamaha-motor.com.au') ? $url : null;
     }
 }
