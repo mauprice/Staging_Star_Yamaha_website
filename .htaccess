@@ -20,6 +20,11 @@
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 
+    # Anything else under these application directories is never meant to be
+    # requested directly - block before falling through to Apache's default
+    # static-file serving, which would otherwise expose source/config/logs.
+    RewriteRule ^(app|bootstrap|config|database|packages|resources|routes|storage|tests|vendor)(/|$) - [F,L]
+
     # Route all other requests through the root index.php (fixes SCRIPT_NAME)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

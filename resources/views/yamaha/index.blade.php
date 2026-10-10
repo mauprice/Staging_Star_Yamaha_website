@@ -89,22 +89,35 @@
     {{-- Category strip — promoted to prominent media tiles per audit (was a thin row of small icons) --}}
     <div class="bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Yamaha Range</p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-                @foreach(\App\Support\YamahaDivisions::filterVisible([
+            @php
+                $yamahaRangeDivisions = \App\Support\YamahaDivisions::filterVisible([
                     'road'       => 'Road',
                     'off-road'   => 'Off Road',
                     'atv-rov'    => 'ATV / ROV',
                     'watercraft' => 'Watercraft',
                     'golf-car'   => 'Golf',
-                ]) as $slug => $label)
+                ]);
+                // Columns track the number of visible divisions (admin-toggleable)
+                // so tiles stay the same size as the Specials & Offers cards
+                // instead of shrinking into unused grid tracks.
+                $yamahaRangeLgCols = match (min(count($yamahaRangeDivisions), 5)) {
+                    1 => 'lg:grid-cols-1',
+                    2 => 'lg:grid-cols-2',
+                    3 => 'lg:grid-cols-3',
+                    4 => 'lg:grid-cols-4',
+                    default => 'lg:grid-cols-5',
+                };
+            @endphp
+            <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Yamaha Range</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 {{ $yamahaRangeLgCols }} gap-3 md:gap-4">
+                @foreach($yamahaRangeDivisions as $slug => $label)
                 <x-media-tile
                     href="{{ route('yamaha.group', $slug) }}"
                     image="{{ $groupPreviews[$slug]['image'] ?? null }}"
                     :imageAlt="$label"
                     label="{{ $label }}"
                     sublabel="View Range →"
-                    ratio="16/10" />
+                    ratio="3/2" />
                 @endforeach
             </div>
 
@@ -126,12 +139,12 @@
     </div>
 
     {{-- Current Promotions --}}
-    @if($showSpecialsOffers && $promotions->where('active', true)->isNotEmpty())
+    @if($showSpecialsOffers && $promotions->isNotEmpty())
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p class="text-xs uppercase tracking-[0.3em] font-black text-brand mb-1">Current Deals</p>
         <h2 class="text-3xl font-black uppercase text-gray-900 mb-8 tracking-tight">Specials & Offers</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($promotions->where('active', true)->take(6) as $promo)
+            @foreach($promotions as $promo)
             <x-deal-card
                 href="{{ $promo->full_content_url }}"
                 target="_blank"

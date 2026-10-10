@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\HondaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
@@ -42,6 +43,8 @@ Route::prefix('bikes')->name('yamaha.')->group(function () {
     Route::get('/{group}/{category}', [YamahaController::class, 'category'])->name('category');
     Route::get('/{group}/{category}/{slug}', [YamahaController::class, 'product'])->name('product');
 });
+
+Route::post('/enquire', [EnquiryController::class, 'store'])->name('yamaha.enquire');
 
 Route::get('/insurance', function () {
     return view('yamaha.insurance');

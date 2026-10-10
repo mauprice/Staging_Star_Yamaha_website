@@ -10,10 +10,12 @@ class SpecialController extends Controller
     public function index()
     {
         $specials = Special::active()->get();
-        $promotions = YamahaPromotion::where('active', true)
+        $promotions = YamahaPromotion::where('is_visible', true)
             ->where('country', 'AU')
-            ->where('type', '!=', 'Outboard')
-            ->orderBy('sort_index')
+            ->where(function ($query) {
+                $query->whereNull('type')->orWhere('type', 'not like', 'Outboard%');
+            })
+            ->orderBy('display_order')
             ->get();
 
         return view('specials.index', compact('specials', 'promotions'));

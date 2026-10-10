@@ -520,13 +520,23 @@ class SyncYamahaProducts extends Command
                 return;
             }
 
-            YamahaPromotion::where('country', $country)->delete();
+            // Upsert by id (rather than delete-and-recreate) so admin-set
+            // is_visible/display_order overrides on existing rows (see
+            // YamahaPromotion) survive the sync; promos the API stops
+            // returning are marked inactive instead of deleted.
+            $seenIds = [];
 
             foreach ($promotions as $index => $promo) {
                 $type = trim((string) ($promo['type'] ?? ''));
+                $id = $promo['id'] ?? null;
 
-                YamahaPromotion::create([
-                    'id'               => $promo['id'],
+                if (! $id) {
+                    continue;
+                }
+
+                $seenIds[] = $id;
+
+                YamahaPromotion::updateOrCreate(['id' => $id], [
                     'head'             => HtmlEntityDecoder::decode($promo['head'] ?? null),
                     'brief'            => HtmlEntityDecoder::decode($promo['brief'] ?? null),
                     'brief_image'      => isset($promo['briefImage']) ? trim($promo['briefImage']) : null,
@@ -535,14 +545,16 @@ class SyncYamahaProducts extends Command
                     'image'            => isset($promo['image']) ? trim($promo['image']) : null,
                     'type'             => $type !== '' ? $type : null,
                     // The API returns this space-padded; trust our own request param
-                    // instead, or the delete-before-reinsert above silently stops
-                    // matching existing rows on the next run and crashes on a
-                    // duplicate primary key.
+                    // instead, or matching existing rows on the next run breaks.
                     'country'          => $country,
                     'active'           => $promo['active'] ?? true,
                     'sort_index'       => $index,
                 ]);
             }
+
+            YamahaPromotion::where('country', $country)
+                ->whereNotIn('id', $seenIds)
+                ->update(['active' => false]);
 
             $this->info('Promotions synced: ' . count($promotions));
         } catch (\Exception $e) {

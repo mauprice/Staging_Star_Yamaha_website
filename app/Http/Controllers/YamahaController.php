@@ -62,11 +62,11 @@ class YamahaController extends Controller
 
     public function index(): View
     {
-        $promotions = YamahaPromotion::where('active', true)
+        $promotions = YamahaPromotion::where('is_visible', true)
             ->where(function ($query) {
                 $query->whereNull('type')->orWhere('type', 'not like', 'Outboard%');
             })
-            ->orderBy('sort_index')
+            ->orderBy('display_order')
             ->get();
 
         // Admin-controlled from the "Homepage Sliders" settings page — lets the
@@ -117,13 +117,11 @@ class YamahaController extends Controller
 
         $groupPreviews = [];
         foreach (\App\Support\YamahaDivisions::filterVisible(self::GROUP_MAP) as $slug => $group) {
-            $product = YamahaProduct::where('product_group', $group)
-                ->with('heroBanners')
-                ->first();
-            if ($product) {
+            $image = $this->previewImage(YamahaProduct::where('product_group', $group));
+            if ($image) {
                 $groupPreviews[$slug] = [
                     'label' => $group,
-                    'image' => $product->heroBanners->first()?->image ?? $product->summary_image,
+                    'image' => $image,
                 ];
             }
         }
@@ -162,9 +160,9 @@ class YamahaController extends Controller
                 if ($filter['sub_category']) {
                     $q->where('sub_category', $filter['sub_category']);
                 }
-                $product = $q->with('heroBanners')->first();
-                if ($product) {
-                    $previews[ucfirst($slug)] = $product->heroBanners->first()?->image ?? $product->summary_image;
+                $image = $this->previewImage($q);
+                if ($image) {
+                    $previews[ucfirst($slug)] = $image;
                 }
             }
 
@@ -190,12 +188,11 @@ class YamahaController extends Controller
 
         $previews = [];
         foreach ($subCategories as $subCat) {
-            $product = YamahaProduct::where('product_group', $groupName)
-                ->where('sub_category', $subCat)
-                ->with('heroBanners')
-                ->first();
-            if ($product) {
-                $previews[$subCat] = $product->heroBanners->first()?->image ?? $product->summary_image;
+            $image = $this->previewImage(
+                YamahaProduct::where('product_group', $groupName)->where('sub_category', $subCat)
+            );
+            if ($image) {
+                $previews[$subCat] = $image;
             }
         }
 
@@ -309,5 +306,20 @@ class YamahaController extends Controller
     private function slugToCategory(string $slug): string
     {
         return self::CATEGORY_MAP[$slug] ?? ucwords(str_replace('-', ' ', $slug));
+    }
+
+    /**
+     * Yamaha's API has known gaps where a product gets no image data at all
+     * (acknowledged in SyncYamahaProducts' local-fallback-image comment) —
+     * picking whichever product sorts first in a group can land on one of
+     * those and leave a tile blank. Scans for the first product that
+     * actually has a usable image instead.
+     */
+    private function previewImage(Builder $query): ?string
+    {
+        $product = $query->with('heroBanners')->get()
+            ->first(fn (YamahaProduct $p) => $p->heroBanners->first()?->image ?: $p->summary_image);
+
+        return $product ? ($product->heroBanners->first()?->image ?: $product->summary_image) : null;
     }
 }

@@ -9,7 +9,9 @@ class NewsController extends Controller
     public function index()
     {
         $news = YamahaNews::active()
-            ->where('type', '!=', 'Outboard')
+            ->where(function ($query) {
+                $query->whereNull('type')->orWhere('type', 'not like', 'Outboard%');
+            })
             ->orderBy('sort_index')
             ->orderByDesc('id')
             ->get();
@@ -23,7 +25,9 @@ class NewsController extends Controller
     {
         $article = YamahaNews::where('id', $id)
             ->where('active', true)
-            ->where('type', '!=', 'Outboard')
+            ->where(function ($query) {
+                $query->whereNull('type')->orWhere('type', 'not like', 'Outboard%');
+            })
             ->firstOrFail();
 
         return view('yamaha.news.show', compact('article'));
