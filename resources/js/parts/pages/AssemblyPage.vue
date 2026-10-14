@@ -169,6 +169,19 @@
                             </svg>
                           </button>
                         </div>
+                        <div v-if="part.superseded_by" class="mt-1">
+                          <router-link :to="`/search?q=${encodeURIComponent(part.superseded_by)}`"
+                            @click.stop
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
+                            :title="part.superseded_note || 'Superseded'">
+                            ⚠ Superseded → {{ part.superseded_by }}
+                          </router-link>
+                        </div>
+                        <div v-else-if="part.superseded_note" class="mt-1">
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700">
+                            ⚠ Discontinued ({{ part.superseded_note }})
+                          </span>
+                        </div>
                       </td>
 
                       <td class="px-3 py-2 text-gray-700" :class="part.parent_id ? 'pl-7' : ''">

@@ -104,6 +104,8 @@ class PartsCatalogueController extends Controller
                 'has_child' => $p->has_child,
                 'rrp' => $price ? round($price['cents'] / 100, 2) : null,
                 'currency' => $price['currency'] ?? null,
+                'superseded_by' => $price['superseded_by'] ?? null,
+                'superseded_note' => $price['superseded_note'] ?? null,
             ];
         });
 
@@ -189,6 +191,8 @@ class PartsCatalogueController extends Controller
                 'product_id' => $p->assembly?->content?->product_id,
                 'rrp' => $price ? round($price['cents'] / 100, 2) : null,
                 'currency' => $price['currency'] ?? null,
+                'superseded_by' => $price['superseded_by'] ?? null,
+                'superseded_note' => $price['superseded_note'] ?? null,
             ];
         });
 

@@ -28,3 +28,6 @@ Thumbs.db
 
 # Access database files
 *.mdb
+
+# YPIC fixed-width price files (large, re-pulled from source as needed)
+/P*.001

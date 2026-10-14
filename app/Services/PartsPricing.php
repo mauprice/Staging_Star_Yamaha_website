@@ -20,24 +20,26 @@ class PartsPricing
 
     /**
      * @param  \Illuminate\Support\Collection<int, string>  $partNumbers
-     * @return Collection<string, array{cents: int, currency: string}> keyed by part_number
+     * @return Collection<string, array{cents: int, currency: string, superseded_by: ?string, superseded_note: ?string}> keyed by part_number
      */
     public function forNumbers(Collection $partNumbers): Collection
     {
         $multiplier = $this->markupMultiplier();
 
         return Price::whereIn('part_number', $partNumbers)
-            ->get(['part_number', 'rrp_cents', 'currency'])
+            ->get(['part_number', 'rrp_cents', 'currency', 'superseded_by', 'superseded_note'])
             ->mapWithKeys(fn ($price) => [
                 $price->part_number => [
                     'cents' => (int) round($price->rrp_cents * $multiplier),
                     'currency' => $price->currency,
+                    'superseded_by' => $price->superseded_by,
+                    'superseded_note' => $price->superseded_note,
                 ],
             ]);
     }
 
     /**
-     * @return array{cents: int, currency: string}|null
+     * @return array{cents: int, currency: string, superseded_by: ?string, superseded_note: ?string}|null
      */
     public function forNumber(string $partNumber): ?array
     {

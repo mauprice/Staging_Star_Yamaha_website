@@ -67,6 +67,18 @@
                   </svg>
                 </button>
               </div>
+              <div v-if="r.superseded_by" class="mt-1">
+                <router-link :to="`/search?q=${encodeURIComponent(r.superseded_by)}`"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
+                  :title="r.superseded_note || 'Superseded'">
+                  ⚠ Superseded → {{ r.superseded_by }}
+                </router-link>
+              </div>
+              <div v-else-if="r.superseded_note" class="mt-1">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700">
+                  ⚠ Discontinued ({{ r.superseded_note }})
+                </span>
+              </div>
             </td>
             <td class="px-4 py-2.5 text-gray-700">{{ r.desc }}</td>
             <td class="px-4 py-2.5 text-center text-gray-600">{{ r.qty }}</td>
@@ -130,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useCart } from '../useCart'
@@ -157,6 +169,21 @@ onMounted(() => {
     runSearch({ category: 'tyres', product_id: tyreFilter.value.productId })
   }
 })
+
+// Vue Router reuses this component instance when navigating from one
+// /search?q=X to another (same route, different query), so onMounted alone
+// won't re-fire — needed so a clicked supersession badge actually re-runs
+// the search for the replacement part number.
+watch(
+  () => route.query.q,
+  (q) => {
+    if (q && q !== query.value) {
+      query.value = String(q)
+      search()
+    }
+  },
+  { immediate: true },
+)
 
 async function search() {
   if (query.value.length < 3) return

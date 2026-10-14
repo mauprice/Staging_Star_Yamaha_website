@@ -17,9 +17,15 @@ class SyncPartsCatalogue extends Command
 
     // Order matters: children before parents would leave dangling foreign
     // references mid-sync, so parents are truncated/reloaded first.
+    //
+    // 'prices' is deliberately excluded: this app now parses the YPIC
+    // P*.001 price files itself (see ImportPartsPrices) to pick up
+    // supersession data the remote dump's schema doesn't have, so pulling
+    // 'prices' from NorthStar here would both clobber that data and break
+    // on the remote's old (narrower) column list.
     private const TABLES = [
         'products', 'contents', 'assemblies', 'images',
-        'assembly_images', 'parts', 'model_images', 'prices',
+        'assembly_images', 'parts', 'model_images',
     ];
 
     public function handle(): int

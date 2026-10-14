@@ -15,6 +15,7 @@ class Price extends Model
 
     protected $fillable = [
         'part_number', 'description', 'rrp_cents', 'cost_cents',
+        'superseded_by', 'superseded_note',
         'currency', 'source_file', 'imported_at',
     ];
 
