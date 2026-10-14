@@ -42,9 +42,10 @@ class OrderInfolist
                     ->schema([
                         RepeatableEntry::make('items')
                             ->hiddenLabel()
-                            ->columns(4)
+                            ->columns(5)
                             ->schema([
                                 TextEntry::make('product_name')->label('Product')->columnSpan(2),
+                                TextEntry::make('part_number')->label('Part #')->placeholder('—')->fontFamily('mono'),
                                 TextEntry::make('quantity'),
                                 TextEntry::make('line_total')->money('AUD'),
                             ]),
