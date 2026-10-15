@@ -235,6 +235,42 @@
           ✓ Copied: {{ copiedNumber }}
         </div>
       </Transition>
+
+      <!-- Supersession confirm prompt -->
+      <Transition enter-active-class="transition-opacity duration-150" enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-150" leave-to-class="opacity-0">
+        <div v-if="pendingSupersession"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          @click.self="cancelSupersessionPrompt">
+          <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl leading-none">⚠</div>
+              <div>
+                <h3 class="font-semibold text-gray-900">Part Superseded</h3>
+                <p class="text-sm text-gray-600 mt-1">
+                  <span class="font-mono">{{ pendingSupersession.number }}</span> has been superseded.
+                  Current part number:
+                  <span class="font-mono font-semibold">{{ pendingSupersession.superseded_by }}</span>
+                </p>
+              </div>
+            </div>
+            <div class="mt-5 flex flex-col gap-2">
+              <button @click="confirmAddLatest"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+                Add {{ pendingSupersession.superseded_by }} (current)
+              </button>
+              <button @click="confirmAddOriginal"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 rounded-lg transition-colors">
+                Add {{ pendingSupersession.number }} anyway
+              </button>
+              <button @click="cancelSupersessionPrompt"
+                class="text-xs text-gray-400 hover:text-gray-600 mt-1">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </template>
   </div>
 </template>
@@ -246,7 +282,15 @@ import { useCart } from '../useCart'
 
 const props = defineProps({ id: String })
 
-const { addingPartNumber, addedPartNumber, addPartToCart } = useCart()
+const {
+  addingPartNumber,
+  addedPartNumber,
+  pendingSupersession,
+  addPartToCart,
+  confirmAddLatest,
+  confirmAddOriginal,
+  cancelSupersessionPrompt,
+} = useCart()
 
 const assembly        = ref(null)
 const images          = ref([])
