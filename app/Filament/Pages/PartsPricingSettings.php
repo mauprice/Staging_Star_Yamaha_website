@@ -15,9 +15,9 @@ class PartsPricingSettings extends Page
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
 
-    protected static ?string $navigationLabel = 'Parts Pricing';
+    protected static ?string $navigationLabel = 'Yamaha Parts Pricing';
 
-    protected static ?string $title = 'Parts Pricing';
+    protected static ?string $title = 'Yamaha Parts Pricing';
 
     protected static ?int $navigationSort = 4;
 
