@@ -12,15 +12,6 @@
           </select>
         </div>
 
-        <div class="w-40">
-          <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Type</label>
-          <select v-model="filters.type" @change="onFilterChange"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-            <option value="">All Types</option>
-            <option v-for="t in types" :key="t" :value="t">{{ t }}</option>
-          </select>
-        </div>
-
         <div class="flex-1 min-w-48">
           <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Search Model</label>
           <input

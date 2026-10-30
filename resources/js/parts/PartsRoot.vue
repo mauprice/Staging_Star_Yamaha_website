@@ -1,16 +1,16 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 pt-4">
     <!-- Brand switcher -->
-    <div class="flex gap-2 mb-3">
+    <div class="flex gap-3 mb-4">
       <router-link :to="brandHome('yamaha')"
-        class="brand-btn"
-        :class="brand === 'yamaha' ? 'brand-btn-active-yamaha' : ''">
-        Yamaha
+        class="brand-tile"
+        :class="brand === 'yamaha' ? 'brand-tile-active-yamaha' : ''">
+        <img src="/images/yamaha_brand_logo.png" alt="Yamaha" class="brand-tile-logo" />
       </router-link>
       <router-link :to="brandHome('honda')"
-        class="brand-btn"
-        :class="brand === 'honda' ? 'brand-btn-active-honda' : ''">
-        Honda
+        class="brand-tile"
+        :class="brand === 'honda' ? 'brand-tile-active-honda' : ''">
+        <img src="/images/honda_brand_logo.png" alt="Honda" class="brand-tile-logo" />
       </router-link>
     </div>
 
@@ -60,16 +60,29 @@ function brandHome(targetBrand) {
 .tab:hover { color: #374151; }
 .tab-active { color: #2563eb; border-bottom-color: #2563eb; }
 
-.brand-btn {
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
+.brand-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 2rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7eb;
   background: #fff;
+  transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.brand-btn:hover { background: #f9fafb; }
-.brand-btn-active-yamaha { background: #2563eb; border-color: #2563eb; color: #fff; }
-.brand-btn-active-honda { background: #dc2626; border-color: #dc2626; color: #fff; }
+.brand-tile:hover { border-color: #d1d5db; background: #f9fafb; }
+
+.brand-tile-logo {
+  height: 2.25rem;
+  width: auto;
+  display: block;
+}
+
+.brand-tile-active-yamaha,
+.brand-tile-active-honda {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.brand-tile-active-yamaha { border-color: #2563eb; }
+.brand-tile-active-honda { border-color: #dc2626; }
 </style>
