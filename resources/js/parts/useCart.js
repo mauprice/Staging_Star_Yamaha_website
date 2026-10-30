@@ -8,7 +8,7 @@ import { ref } from 'vue'
  * the global function keeps CSRF handling and the header cart badge sync
  * in one place instead of duplicating it here.
  */
-export function useCart() {
+export function useCart(addUrl = '/cart/add-part') {
   const addingPartNumber = ref(null)
   const addedPartNumber = ref(null)
 
@@ -54,7 +54,7 @@ export function useCart() {
     const ok = await window.addToCart(
       { part_number: number, quantity: 1 },
       button,
-      '/cart/add-part',
+      addUrl,
     )
 
     addingPartNumber.value = null

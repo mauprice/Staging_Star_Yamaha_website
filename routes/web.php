@@ -5,6 +5,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\HondaController;
+use App\Http\Controllers\HondaPartsCatalogueController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
 use App\Http\Controllers\PosReceiptController;
@@ -103,6 +104,15 @@ Route::prefix('api/parts-catalogue')->name('api.parts-catalogue.')->group(functi
     Route::get('/parts/search', [PartsCatalogueController::class, 'searchParts'])->name('parts.search');
 });
 
+Route::prefix('api/parts-catalogue/honda')->name('api.parts-catalogue.honda.')->group(function () {
+    Route::get('/vehicles', [HondaPartsCatalogueController::class, 'vehicles'])->name('vehicles');
+    Route::get('/vehicles/years', [HondaPartsCatalogueController::class, 'years'])->name('vehicles.years');
+    Route::get('/vehicles/types', [HondaPartsCatalogueController::class, 'types'])->name('vehicles.types');
+    Route::get('/vehicles/{id}', [HondaPartsCatalogueController::class, 'show'])->where('id', '[0-9]+')->name('vehicles.show');
+    Route::get('/assemblies/{id}', [HondaPartsCatalogueController::class, 'showAssembly'])->where('id', '[0-9]+')->name('assemblies.show');
+    Route::get('/parts/search', [HondaPartsCatalogueController::class, 'searchParts'])->name('parts.search');
+});
+
 Route::prefix('shop')->name('yamaha.shop.')->group(function () {
     Route::get('/', [ShopController::class, 'index'])->name('index');
     Route::get('/{id}-{slug}', [ShopController::class, 'show'])->where('id', '[0-9]+')->name('show');
@@ -114,6 +124,7 @@ Route::prefix('cart')->name('yamaha.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'store'])->name('add');
     Route::post('/add-part', [CartController::class, 'storePart'])->name('add-part');
+    Route::post('/add-honda-part', [CartController::class, 'storeHondaPart'])->name('add-honda-part');
     Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
     Route::delete('/{cartItem}', [CartController::class, 'destroy'])->name('destroy');
 });

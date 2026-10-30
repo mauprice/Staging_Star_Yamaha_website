@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\HondaPartsPricing;
 use App\Services\PartsPricing;
+use Honda\Parts\Models\Part as HondaPart;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,6 +123,66 @@ class CartController extends Controller
                 'user_id' => auth()->id(),
                 'part_number' => $data['part_number'],
                 'part_description' => $part->desc,
+                'unit_price_snapshot' => $price['cents'] / 100,
+                'currency' => $price['currency'],
+                'quantity' => $newQuantity,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Added to cart.',
+            'count' => self::currentCount(),
+        ]);
+    }
+
+    /**
+     * Honda equivalent of storePart() — separate method rather than branching
+     * inside storePart(), so the already-working Yamaha path is never touched.
+     * Shares the same cart_items row shape (part_number/part_description/
+     * unit_price_snapshot/currency are brand-agnostic — checkout never
+     * re-derives price from either catalogue, it only trusts this snapshot),
+     * so Yamaha and Honda items can sit in the same cart/order.
+     */
+    public function storeHondaPart(Request $request, HondaPartsPricing $pricing): JsonResponse
+    {
+        $data = $request->validate([
+            'part_number' => 'required|string|max:255',
+            'quantity' => 'nullable|integer|min:1|max:99',
+        ]);
+
+        $normalized = preg_replace('/[^A-Za-z0-9]/', '', $data['part_number']);
+
+        $part = HondaPart::where('search_part_no', $normalized)
+            ->orWhere('part_no', $data['part_number'])
+            ->first();
+
+        abort_unless($part, 404);
+
+        $price = $pricing->forNumber($part->search_part_no);
+
+        if (! $price) {
+            return response()->json([
+                'message' => "This part doesn't have a price and can't be ordered online — please contact us.",
+            ], 422);
+        }
+
+        $quantity = $data['quantity'] ?? 1;
+
+        $cartItem = CartItem::forCurrentCart()
+            ->whereNull('product_id')
+            ->where('part_number', $data['part_number'])
+            ->first();
+
+        $newQuantity = min(($cartItem->quantity ?? 0) + $quantity, 99);
+
+        if ($cartItem) {
+            $cartItem->update(['quantity' => $newQuantity]);
+        } else {
+            CartItem::create([
+                'session_id' => session()->getId(),
+                'user_id' => auth()->id(),
+                'part_number' => $data['part_number'],
+                'part_description' => $part->description,
                 'unit_price_snapshot' => $price['cents'] / 100,
                 'currency' => $price['currency'],
                 'quantity' => $newQuantity,

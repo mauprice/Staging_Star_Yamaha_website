@@ -10,6 +10,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "filament/filament": "^4.0",
         "honda/catalog": "@dev",
+        "honda/parts": "@dev",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "spatie/laravel-permission": "^8.1",
@@ -20,6 +21,10 @@
         {
             "type": "path",
             "url": "packages/honda-catalog"
+        },
+        {
+            "type": "path",
+            "url": "packages/honda-parts"
         },
         {
             "type": "path",

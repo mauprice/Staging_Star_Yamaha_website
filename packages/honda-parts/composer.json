@@ -1,0 +1,33 @@
+{
+    "name": "honda/parts",
+    "description": "Honda genuine parts catalogue (models, assemblies, parts, pricing) sourced from the Honda electronic parts catalogue disc.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "honda", "parts", "catalogue"],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+        "spatie/laravel-package-tools": "^1.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Honda\\Parts\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Honda\\Parts\\HondaPartsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}
