@@ -8,15 +8,16 @@ use App\Http\Controllers\HondaController;
 use App\Http\Controllers\HondaPartsCatalogueController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
+use App\Http\Controllers\PayPalWebhookController;
 use App\Http\Controllers\PosReceiptController;
 use App\Http\Controllers\PreOwnedController;
-use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\PurchaseOrderPrintController;
 use App\Http\Controllers\ServiceBookingReplyController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpecialController;
-use App\Http\Controllers\PayPalWebhookController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\YamahaController;
 use Illuminate\Support\Facades\Route;
@@ -145,6 +146,8 @@ Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->nam
 Route::post('/webhooks/paypal', [PayPalWebhookController::class, 'handle'])->name('yamaha.webhooks.paypal');
 
 Route::middleware('auth:pos,web')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
+
+Route::middleware('auth')->get('/admin/purchase-orders/{purchaseOrder}/print', [PurchaseOrderPrintController::class, 'show'])->name('purchase-orders.print');
 
 Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');

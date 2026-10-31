@@ -55,6 +55,11 @@ class Product extends Model
         return $this->belongsTo(Supplier::class);
     }
 
+    public function purchaseOrderLines(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderLine::class);
+    }
+
     public function needsReorder(): bool
     {
         return $this->min_stock !== null && $this->total_stock <= $this->min_stock;

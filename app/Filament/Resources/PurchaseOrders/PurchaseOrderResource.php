@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Filament\Resources\PurchaseOrders;
+
+use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Pages\EditPurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
+use App\Filament\Resources\PurchaseOrders\Pages\ReceivePurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Schemas\PurchaseOrderForm;
+use App\Filament\Resources\PurchaseOrders\Tables\PurchaseOrdersTable;
+use App\Models\PurchaseOrder;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+
+class PurchaseOrderResource extends Resource
+{
+    protected static ?string $model = PurchaseOrder::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+
+    protected static ?string $navigationLabel = 'Purchase Orders';
+
+    protected static ?int $navigationSort = 5;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Shop';
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return PurchaseOrderForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return PurchaseOrdersTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListPurchaseOrders::route('/'),
+            'create' => CreatePurchaseOrder::route('/create'),
+            'edit' => EditPurchaseOrder::route('/{record}/edit'),
+            'receive' => ReceivePurchaseOrder::route('/{record}/receive'),
+        ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasAnyRole(['Admin', 'Manager']) ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->hasAnyRole(['Admin', 'Manager']) ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->hasAnyRole(['Admin', 'Manager']) ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->hasRole('Admin') ?? false;
+    }
+}
