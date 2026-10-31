@@ -2,12 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "../northstar_yamaha"
-		},
-		{
-			"path": "../yamaha_parts"
 		}
 	],
 	"settings": {}
