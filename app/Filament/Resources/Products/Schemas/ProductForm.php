@@ -81,6 +81,33 @@ class ProductForm
                             ->helperText('Not used for clothing/helmets — stock is tracked per size/colour variant below.'),
                     ]),
 
+                Section::make('Supplier & Reorder')
+                    ->description('Who this is ordered from and when to reorder. Not shown to customers.')
+                    ->columns(3)
+                    ->columnSpanFull()
+                    ->schema([
+                        Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->relationship('supplier', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false),
+                        TextInput::make('location')
+                            ->placeholder('A12'),
+                        TextInput::make('reorder_code')
+                            ->maxLength(20),
+                        TextInput::make('min_stock')
+                            ->label('Min Reorder Level')
+                            ->numeric()
+                            ->helperText('Alerts when stock falls to or below this.'),
+                        TextInput::make('max_stock')
+                            ->label('Max Stock Level')
+                            ->numeric(),
+                        TextInput::make('reorder_qty')
+                            ->label('Reorder Qty')
+                            ->numeric(),
+                    ]),
+
                 Section::make('Shipping')
                     ->description('Used to calculate shipping cost at checkout.')
                     ->columns(4)
@@ -176,7 +203,7 @@ class ProductForm
                             ->addActionLabel('Add Size/Colour Combination')
                             ->reorderable(false)
                             ->collapsible()
-                            ->itemLabel(fn (array $state) => trim(($state['size'] ?? '') . ' / ' . ($state['colour'] ?? ''), ' /') ?: 'New Variant')
+                            ->itemLabel(fn (array $state) => trim(($state['size'] ?? '').' / '.($state['colour'] ?? ''), ' /') ?: 'New Variant')
                             ->columnSpanFull(),
                     ]),
 

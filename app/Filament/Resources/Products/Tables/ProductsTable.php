@@ -11,6 +11,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -45,13 +46,14 @@ class ProductsTable
                     ->color('gray'),
 
                 TextColumn::make('price')
-                    ->formatStateUsing(fn ($state) => '$' . number_format($state, 2))
+                    ->formatStateUsing(fn ($state) => '$'.number_format($state, 2))
                     ->sortable(),
 
                 TextColumn::make('total_stock')
                     ->label('Stock')
                     ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger')
+                    ->description(fn (Product $record) => $record->needsReorder() ? 'Reorder' : null),
 
                 IconColumn::make('active')
                     ->label('Live')
@@ -71,6 +73,9 @@ class ProductsTable
                 TernaryFilter::make('active')->label('Show on website'),
                 SelectFilter::make('category')
                     ->options(array_combine(Product::CATEGORIES, Product::CATEGORIES)),
+                Filter::make('needs_reorder')
+                    ->label('Needs reorder')
+                    ->query(fn ($query) => $query->whereNotNull('min_stock')->whereColumn('stock_quantity', '<=', 'min_stock')),
             ])
             ->recordActions([
                 EditAction::make(),

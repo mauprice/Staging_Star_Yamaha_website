@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -25,11 +26,12 @@ class Product extends Model
         'category', 'brand', 'name', 'description', 'part_number', 'barcode',
         'price', 'weight_kg', 'length_mm', 'width_mm', 'height_mm',
         'stock_quantity', 'active', 'sort_order',
+        'supplier_id', 'location', 'min_stock', 'max_stock', 'reorder_qty', 'reorder_code',
     ];
 
     protected $casts = [
-        'active'    => 'boolean',
-        'price'     => 'decimal:2',
+        'active' => 'boolean',
+        'price' => 'decimal:2',
         'weight_kg' => 'decimal:3',
     ];
 
@@ -48,6 +50,16 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function needsReorder(): bool
+    {
+        return $this->min_stock !== null && $this->total_stock <= $this->min_stock;
+    }
+
     public function isClothing(): bool
     {
         return in_array($this->category, self::CLOTHING_CATEGORIES, true);
@@ -62,7 +74,7 @@ class Product extends Model
 
     public function getSlugAttribute(): string
     {
-        return $this->id . '-' . str($this->name)->slug();
+        return $this->id.'-'.str($this->name)->slug();
     }
 
     /**

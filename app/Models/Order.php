@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Order extends Model
 {
     protected $fillable = [
-        'order_number', 'user_id', 'cashier_id', 'placed_as_guest', 'source',
+        'order_number', 'user_id', 'customer_id', 'cashier_id', 'placed_as_guest', 'source',
         'customer_name', 'customer_email', 'customer_phone',
         'status', 'payment_method', 'fulfillment_method', 'currency',
         'subtotal', 'shipping_total', 'total', 'tax_total',
@@ -53,7 +53,7 @@ class Order extends Model
 
         static::created(function (Order $order) {
             if (! $order->order_number) {
-                $order->forceFill(['order_number' => 'SY-' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT)])->save();
+                $order->forceFill(['order_number' => 'SY-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT)])->save();
             }
         });
     }
@@ -61,6 +61,11 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function cashier(): BelongsTo
