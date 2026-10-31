@@ -170,11 +170,15 @@
                 <div class="pos-cart-name">
                     <strong>{{ $item['product_name'] }}{{ $item['variant_label'] ? " ({$item['variant_label']})" : '' }}</strong>
                     <span>${{ number_format($item['unit_price'], 2) }} each</span>
+                    @if($item['quantity'] > $item['available_stock'])
+                    <span style="color:#fbbf24; display:block;">
+                        {{ $item['available_stock'] }} in stock — {{ $item['quantity'] - $item['available_stock'] }} will be back-ordered
+                    </span>
+                    @endif
                 </div>
                 <input
                     type="number"
                     min="1"
-                    max="{{ $item['available_stock'] }}"
                     class="pos-qty-input"
                     value="{{ $item['quantity'] }}"
                     wire:change="updateQuantity('{{ $key }}', $event.target.value)"
@@ -189,6 +193,93 @@
     </div>
 
     <div class="pos-col-side">
+        <div class="pos-card">
+            <div class="pos-card-header"><h3>Customer</h3></div>
+            <div class="pos-search-body">
+                @if($this->selectedCustomer)
+                <div class="pos-result" style="border-bottom:none; padding:0;">
+                    <div>
+                        <div class="pos-result-name">{{ $this->selectedCustomer->name }}</div>
+                        <div class="pos-result-meta">{{ collect([$this->selectedCustomer->phone, $this->selectedCustomer->email])->filter()->implode(' · ') ?: '—' }}</div>
+                    </div>
+                    <button type="button" class="pos-btn pos-btn-sm pos-btn-ghost" wire:click="clearCustomer">Change</button>
+                </div>
+                @else
+                <input
+                    type="text"
+                    class="pos-input"
+                    placeholder="Search name or phone…"
+                    wire:model.live.debounce.300ms="customerSearch"
+                >
+
+                @if(count($customerResults))
+                <div style="margin-top: 12px;">
+                    @foreach($customerResults as $c)
+                    <div class="pos-result">
+                        <div>
+                            <div class="pos-result-name">{{ $c['name'] }}</div>
+                            <div class="pos-result-meta">{{ $c['phone'] ?? '—' }}</div>
+                        </div>
+                        <button type="button" class="pos-btn pos-btn-sm" wire:click="selectCustomer({{ $c['id'] }})">Select</button>
+                    </div>
+                    @endforeach
+                </div>
+                @elseif(trim($customerSearch) !== '')
+                <p class="pos-result-meta" style="margin-top:12px;">No match.</p>
+                @endif
+
+                @if(!$showNewCustomerForm)
+                <button type="button" class="pos-btn pos-btn-sm pos-btn-ghost" style="margin-top:12px;" wire:click="$set('showNewCustomerForm', true)">+ New customer</button>
+                <p class="pos-result-meta" style="margin-top:10px;">Leave blank for a walk-in sale.</p>
+                @else
+                <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                    <input type="text" class="pos-input" placeholder="Name" wire:model="newCustomerForm.name">
+                    <input type="text" class="pos-input" placeholder="Phone" wire:model="newCustomerForm.phone">
+                    <input type="text" class="pos-input" placeholder="Email" wire:model="newCustomerForm.email">
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="pos-btn pos-btn-sm" wire:click="createCustomer">Add &amp; Select</button>
+                        <button type="button" class="pos-btn pos-btn-sm pos-btn-ghost" wire:click="$set('showNewCustomerForm', false)">Cancel</button>
+                    </div>
+                </div>
+                @endif
+                @endif
+            </div>
+        </div>
+
+        <div class="pos-card">
+            <div class="pos-card-header"><h3>Quotes</h3></div>
+            <div class="pos-search-body">
+                @if($quoteId)
+                <div class="pos-result" style="border-bottom:none; padding:0;">
+                    <div class="pos-result-name">Quote loaded</div>
+                    <button type="button" class="pos-btn pos-btn-sm pos-btn-ghost" wire:click="$set('quoteId', null)">Unlink</button>
+                </div>
+                @endif
+                <input
+                    type="text"
+                    class="pos-input"
+                    placeholder="Find a saved quote…"
+                    wire:model.live.debounce.300ms="quoteSearch"
+                >
+                @if(count($quoteResults))
+                <div style="margin-top: 12px;">
+                    @foreach($quoteResults as $q)
+                    <div class="pos-result">
+                        <div>
+                            <div class="pos-result-name">{{ $q['quote_number'] }}</div>
+                            <div class="pos-result-meta">{{ $q['customer_name'] }}</div>
+                        </div>
+                        <button type="button" class="pos-btn pos-btn-sm" wire:click="loadQuote({{ $q['id'] }})">Load</button>
+                    </div>
+                    @endforeach
+                </div>
+                @elseif(trim($quoteSearch) !== '')
+                <p class="pos-result-meta" style="margin-top:12px;">No match.</p>
+                @endif
+                <button type="button" class="pos-btn pos-btn-sm pos-btn-ghost" style="margin-top:12px;" wire:click="saveAsQuote" @if(empty($cart)) disabled @endif>Save Cart as Quote</button>
+            </div>
+        </div>
+
         <div class="pos-card">
             <div class="pos-card-header"><h3>Totals</h3></div>
             <div class="pos-totals-row"><span>Subtotal</span><span>${{ number_format($this->subtotal, 2) }}</span></div>

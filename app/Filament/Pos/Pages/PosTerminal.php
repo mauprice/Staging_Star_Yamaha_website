@@ -2,13 +2,16 @@
 
 namespace App\Filament\Pos\Pages;
 
+use App\Enums\OrderItemFulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Quote;
 use App\Services\StockService;
 use App\Services\StripeTerminalService;
 use Filament\Notifications\Notification;
@@ -34,6 +37,27 @@ class PosTerminal extends Page
 
     /** @var array<string, array<string, mixed>> keyed by "{product_id}-{variant_id|0}" */
     public array $cart = [];
+
+    public ?int $customerId = null;
+
+    public string $customerSearch = '';
+
+    /** @var array<int, array<string, mixed>> */
+    public array $customerResults = [];
+
+    public bool $showNewCustomerForm = false;
+
+    /** @var array<string, string> */
+    public array $newCustomerForm = ['name' => '', 'phone' => '', 'email' => ''];
+
+    /** Set when the current cart was loaded from a saved quote - that quote
+     *  gets marked converted once this sale completes. */
+    public ?int $quoteId = null;
+
+    public string $quoteSearch = '';
+
+    /** @var array<int, array<string, mixed>> */
+    public array $quoteResults = [];
 
     public string $paymentMethod = 'cash';
 
@@ -101,6 +125,165 @@ class PosTerminal extends Page
         ])->all();
     }
 
+    public function getSelectedCustomerProperty(): ?Customer
+    {
+        return $this->customerId ? Customer::find($this->customerId) : null;
+    }
+
+    public function updatedCustomerSearch(): void
+    {
+        $term = trim($this->customerSearch);
+
+        if ($term === '') {
+            $this->customerResults = [];
+
+            return;
+        }
+
+        $this->customerResults = Customer::query()
+            ->where(function ($query) use ($term) {
+                $query->where('name', 'like', "%{$term}%")
+                    ->orWhere('phone', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name', 'phone', 'email'])
+            ->map(fn (Customer $c) => ['id' => $c->id, 'name' => $c->name, 'phone' => $c->phone])
+            ->all();
+    }
+
+    public function selectCustomer(int $customerId): void
+    {
+        $this->customerId = $customerId;
+        $this->customerSearch = '';
+        $this->customerResults = [];
+        $this->showNewCustomerForm = false;
+    }
+
+    public function clearCustomer(): void
+    {
+        $this->customerId = null;
+    }
+
+    public function createCustomer(): void
+    {
+        $name = trim($this->newCustomerForm['name'] ?? '');
+
+        if ($name === '') {
+            Notification::make()->title('Name is required')->warning()->send();
+
+            return;
+        }
+
+        $customer = Customer::create([
+            'name' => $name,
+            'phone' => trim($this->newCustomerForm['phone'] ?? '') ?: null,
+            'email' => trim($this->newCustomerForm['email'] ?? '') ?: null,
+        ]);
+
+        $this->newCustomerForm = ['name' => '', 'phone' => '', 'email' => ''];
+        $this->selectCustomer($customer->id);
+    }
+
+    public function updatedQuoteSearch(): void
+    {
+        $term = trim($this->quoteSearch);
+
+        if ($term === '') {
+            $this->quoteResults = [];
+
+            return;
+        }
+
+        $this->quoteResults = Quote::query()
+            ->whereNull('converted_at')
+            ->where(function ($query) use ($term) {
+                $query->where('quote_number', 'like', "%{$term}%")
+                    ->orWhere('customer_name', 'like', "%{$term}%")
+                    ->orWhere('customer_phone', 'like', "%{$term}%");
+            })
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'quote_number', 'customer_name'])
+            ->map(fn (Quote $q) => ['id' => $q->id, 'quote_number' => $q->quote_number, 'customer_name' => $q->customer_name])
+            ->all();
+    }
+
+    public function saveAsQuote(): void
+    {
+        if (empty($this->cart)) {
+            Notification::make()->title('Cart is empty')->warning()->send();
+
+            return;
+        }
+
+        $customer = $this->selectedCustomer;
+
+        $quote = Quote::create([
+            'customer_id' => $customer?->id,
+            'user_id' => auth()->id(),
+            'customer_name' => $customer->name ?? 'Walk-in customer',
+            'customer_phone' => $customer->phone ?? null,
+        ]);
+
+        foreach ($this->cart as $item) {
+            $quote->lines()->create([
+                'product_id' => $item['product_id'],
+                'product_variant_id' => $item['product_variant_id'],
+                'product_name' => $item['product_name'],
+                'variant_label' => $item['variant_label'],
+                'part_number' => $item['part_number'],
+                'unit_price' => $item['unit_price'],
+                'quantity' => $item['quantity'],
+                'line_total' => $item['line_total'],
+            ]);
+        }
+
+        $this->cart = [];
+        $this->search = '';
+        $this->searchResults = [];
+        $this->customerId = null;
+        $this->customerSearch = '';
+        $this->customerResults = [];
+
+        Notification::make()->title("Quote saved — {$quote->quote_number}")->success()->send();
+    }
+
+    public function loadQuote(int $quoteId): void
+    {
+        $quote = Quote::with('lines')->findOrFail($quoteId);
+
+        $this->cart = [];
+
+        foreach ($quote->lines as $line) {
+            $availableStock = $line->product_variant_id
+                ? (ProductVariant::find($line->product_variant_id)?->quantity ?? 0)
+                : (Product::find($line->product_id)?->stock_quantity ?? 0);
+
+            $key = $line->product_id.'-'.($line->product_variant_id ?? '0');
+
+            $this->cart[$key] = [
+                'product_id' => $line->product_id,
+                'product_variant_id' => $line->product_variant_id,
+                'product_name' => $line->product_name,
+                'variant_label' => $line->variant_label,
+                'part_number' => $line->part_number,
+                'unit_price' => (float) $line->unit_price,
+                'quantity' => $line->quantity,
+                'available_stock' => $availableStock,
+                'line_total' => (float) $line->line_total,
+            ];
+        }
+
+        $this->quoteId = $quote->id;
+        $this->customerId = $quote->customer_id;
+        $this->quoteSearch = '';
+        $this->quoteResults = [];
+
+        Notification::make()->title("Loaded {$quote->quote_number}")->success()->send();
+    }
+
     public function addItem(int $productId, ?int $variantId = null): void
     {
         $product = Product::with('variants')->findOrFail($productId);
@@ -113,13 +296,14 @@ class PosTerminal extends Page
         }
 
         $availableStock = $variant?->quantity ?? $product->stock_quantity;
-        $key = $productId . '-' . ($variantId ?? '0');
+        $key = $productId.'-'.($variantId ?? '0');
         $currentQty = $this->cart[$key]['quantity'] ?? 0;
 
+        // No hard stock block - a sale can mix fulfilled and back-ordered
+        // lines (see createPosOrder). Just let staff know when they cross
+        // into back-order territory.
         if ($currentQty + 1 > $availableStock) {
-            Notification::make()->title('Not enough stock')->body("Only {$availableStock} left.")->warning()->send();
-
-            return;
+            Notification::make()->title('Will be back-ordered')->body("Only {$availableStock} in stock.")->warning()->send();
         }
 
         if (isset($this->cart[$key])) {
@@ -152,7 +336,8 @@ class PosTerminal extends Page
             return;
         }
 
-        $quantity = min($quantity, $this->cart[$key]['available_stock']);
+        // No stock cap here either - see addItem().
+        $quantity = min($quantity, 999);
         $this->cart[$key]['quantity'] = $quantity;
         $this->cart[$key]['line_total'] = $this->cart[$key]['unit_price'] * $quantity;
     }
@@ -242,7 +427,7 @@ class PosTerminal extends Page
                 Payment::create([
                     'order_id' => $order->id,
                     'provider' => 'stripe',
-                    'provider_reference' => 'pending-' . $order->id,
+                    'provider_reference' => 'pending-'.$order->id,
                     'status' => PaymentStatus::Pending,
                     'amount' => $order->total,
                     'currency' => $order->currency,
@@ -323,12 +508,16 @@ class PosTerminal extends Page
 
     private function createPosOrder(OrderStatus $status, PaymentMethod $paymentMethod): Order
     {
+        $customer = $this->selectedCustomer;
+
         $order = Order::create([
             'source' => 'pos',
             'cashier_id' => auth()->id(),
+            'customer_id' => $customer?->id,
             'placed_as_guest' => true,
-            'customer_name' => 'Walk-in customer',
-            'customer_email' => '',
+            'customer_name' => $customer->name ?? 'Walk-in customer',
+            'customer_email' => $customer->email ?? '',
+            'customer_phone' => $customer->phone ?? null,
             'status' => $status,
             'payment_method' => $paymentMethod,
             'currency' => 'AUD',
@@ -340,16 +529,42 @@ class PosTerminal extends Page
         ]);
 
         foreach ($this->cart as $item) {
-            $order->items()->create([
+            // Re-check stock now rather than trust the cart's cached
+            // available_stock - it may have moved since the item was added.
+            $availableNow = $item['product_variant_id']
+                ? (ProductVariant::find($item['product_variant_id'])?->quantity ?? 0)
+                : (Product::find($item['product_id'])?->stock_quantity ?? 0);
+
+            $fulfillQty = min($item['quantity'], max(0, $availableNow));
+            $backorderQty = $item['quantity'] - $fulfillQty;
+
+            $base = [
                 'product_id' => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'],
                 'product_name' => $item['product_name'],
                 'variant_label' => $item['variant_label'],
                 'part_number' => $item['part_number'],
                 'unit_price' => $item['unit_price'],
-                'quantity' => $item['quantity'],
-                'line_total' => $item['line_total'],
-            ]);
+            ];
+
+            if ($fulfillQty > 0) {
+                $order->items()->create([
+                    ...$base,
+                    'quantity' => $fulfillQty,
+                    'line_total' => round($item['unit_price'] * $fulfillQty, 2),
+                    'fulfillment_status' => OrderItemFulfillmentStatus::Fulfilled,
+                    'fulfilled_at' => now(),
+                ]);
+            }
+
+            if ($backorderQty > 0) {
+                $order->items()->create([
+                    ...$base,
+                    'quantity' => $backorderQty,
+                    'line_total' => round($item['unit_price'] * $backorderQty, 2),
+                    'fulfillment_status' => OrderItemFulfillmentStatus::BackOrdered,
+                ]);
+            }
         }
 
         return $order;
@@ -357,12 +572,23 @@ class PosTerminal extends Page
 
     private function finishSale(Order $order): void
     {
+        if ($this->quoteId) {
+            Quote::where('id', $this->quoteId)->update(['order_id' => $order->id, 'converted_at' => now()]);
+        }
+
         $this->lastOrderNumber = $order->order_number;
         $this->lastOrderId = $order->id;
         $this->cart = [];
         $this->search = '';
         $this->searchResults = [];
         $this->cardError = null;
+        $this->customerId = null;
+        $this->customerSearch = '';
+        $this->customerResults = [];
+        $this->showNewCustomerForm = false;
+        $this->quoteId = null;
+        $this->quoteSearch = '';
+        $this->quoteResults = [];
 
         Notification::make()->title("Sale complete — {$order->order_number}")->success()->send();
     }

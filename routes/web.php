@@ -14,6 +14,7 @@ use App\Http\Controllers\PosReceiptController;
 use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderPrintController;
+use App\Http\Controllers\QuotePrintController;
 use App\Http\Controllers\ServiceBookingReplyController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ShopController;
@@ -151,6 +152,8 @@ Route::middleware('auth:pos,web')->get('/pos/receipt/{order}', [PosReceiptContro
 Route::middleware('auth')->get('/admin/purchase-orders/{purchaseOrder}/print', [PurchaseOrderPrintController::class, 'show'])->name('purchase-orders.print');
 
 Route::middleware('auth')->get('/admin/orders/{order}/picking-slip', [PickingSlipController::class, 'show'])->name('orders.picking-slip');
+
+Route::middleware('auth')->get('/admin/quotes/{quote}/print', [QuotePrintController::class, 'show'])->name('quotes.print');
 
 Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');
