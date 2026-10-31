@@ -144,7 +144,7 @@ Route::prefix('checkout')->name('yamaha.checkout.')->group(function () {
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('yamaha.webhooks.stripe');
 Route::post('/webhooks/paypal', [PayPalWebhookController::class, 'handle'])->name('yamaha.webhooks.paypal');
 
-Route::middleware('auth')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
+Route::middleware('auth:pos,web')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
 
 Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');

@@ -14,6 +14,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\BadgeColumn;
@@ -77,6 +79,30 @@ class UserResource extends Resource
                 ->default(true)
                 ->onColor('success')
                 ->offColor('danger'),
+
+            Section::make('Panel Access')
+                ->description('Which areas this user can log into. Role above still controls what they can do inside the admin panel.')
+                ->columns(1)
+                ->schema([
+                    Toggle::make('can_access_admin')
+                        ->label('Admin Panel')
+                        ->helperText('Orders, products, settings, reports.'),
+
+                    Toggle::make('can_access_pos')
+                        ->label('POS Terminal')
+                        ->helperText('In-store sales at /pos.')
+                        ->live(),
+
+                    Toggle::make('pos_shares_admin_login')
+                        ->label('Use their admin login for POS')
+                        ->helperText('Skips a separate POS login - logging into the admin panel signs them into POS too. Leave off for a shared shop-floor terminal where whoever is logged into POS shouldn\'t also be signed into admin.')
+                        ->visible(fn (Get $get) => $get('can_access_pos'))
+                        ->inline(false),
+
+                    Toggle::make('can_access_service')
+                        ->label('Service Panel')
+                        ->helperText('Service bookings at /service.'),
+                ]),
         ]);
     }
 
@@ -110,6 +136,18 @@ class UserResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger')
                     ->sortable(),
+
+                IconColumn::make('can_access_admin')
+                    ->label('Admin')
+                    ->boolean(),
+
+                IconColumn::make('can_access_pos')
+                    ->label('POS')
+                    ->boolean(),
+
+                IconColumn::make('can_access_service')
+                    ->label('Service')
+                    ->boolean(),
 
                 TextColumn::make('created_at')
                     ->label('Created')

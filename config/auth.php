@@ -42,6 +42,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Separate guard (same users table) so the POS panel keeps its own
+        // authenticated session, independent of an admin/service session in
+        // the same browser - logging into one doesn't sign the other out.
+        'pos' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

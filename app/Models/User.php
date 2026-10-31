@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'is_active'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'is_active', 'can_access_admin', 'can_access_pos', 'can_access_service', 'pos_shares_admin_login'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -29,8 +29,9 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return match ($panel->getId()) {
-            'service' => $this->hasAnyRole(['Admin', 'Manager', 'Service Advisor']),
-            default   => $this->hasAnyRole(['Admin', 'Manager', 'Sales', 'Service Advisor']),
+            'service' => $this->can_access_service,
+            'pos'     => $this->can_access_pos,
+            default   => $this->can_access_admin,
         };
     }
 
@@ -55,6 +56,10 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'is_active'         => 'boolean',
+            'can_access_admin'  => 'boolean',
+            'can_access_pos'    => 'boolean',
+            'can_access_service' => 'boolean',
+            'pos_shares_admin_login' => 'boolean',
         ];
     }
 }

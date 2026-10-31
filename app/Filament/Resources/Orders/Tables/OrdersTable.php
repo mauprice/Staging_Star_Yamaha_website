@@ -6,6 +6,8 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\CheckoutController;
+use App\Models\Order;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
@@ -19,7 +21,7 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with('shippingAddress'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['shippingAddress', 'cashier']))
             ->columns([
                 TextColumn::make('order_number')
                     ->label('Order #')
@@ -39,6 +41,11 @@ class OrdersTable
                     ->badge()
                     ->color('gray')
                     ->formatStateUsing(fn ($state) => $state?->label() ?? '—'),
+
+                TextColumn::make('cashier.name')
+                    ->label('Operator')
+                    ->placeholder('—')
+                    ->description(fn ($record) => $record->source === 'pos' ? 'POS sale' : null),
 
                 TextColumn::make('fulfillment_method')
                     ->label('Fulfillment')
@@ -73,6 +80,11 @@ class OrdersTable
                     ->options(collect(OrderStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()])),
                 SelectFilter::make('payment_method')
                     ->options(collect(PaymentMethod::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()])),
+                SelectFilter::make('cashier_id')
+                    ->label('Operator')
+                    ->options(fn () => User::whereIn('id', Order::query()->whereNotNull('cashier_id')->distinct()->pluck('cashier_id'))
+                        ->orderBy('name')
+                        ->pluck('name', 'id')),
                 SelectFilter::make('shippingAddress.state')
                     ->label('State')
                     ->options(array_combine(CheckoutController::AU_STATES, CheckoutController::AU_STATES))

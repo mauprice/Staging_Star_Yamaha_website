@@ -3,19 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Response;
+use Illuminate\Contracts\View\View;
 
 class PosReceiptController extends Controller
 {
-    public function show(Order $order): Response
+    public function show(Order $order): View
     {
-        abort_unless(auth()->user()?->hasAnyRole(['Admin', 'Manager', 'Sales']), 404);
+        abort_unless(auth()->user()?->can_access_pos, 404);
 
-        $order->load(['items', 'shippingAddress', 'billingAddress']);
+        $order->load(['items', 'cashier']);
 
-        $pdf = Pdf::loadView('invoices.order', compact('order'))->setPaper('a4', 'portrait');
-
-        return $pdf->stream("receipt-{$order->order_number}.pdf");
+        return view('pos.receipt', compact('order'));
     }
 }

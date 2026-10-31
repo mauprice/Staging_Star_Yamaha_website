@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Pages;
+namespace App\Filament\Pos\Pages;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
@@ -13,24 +13,19 @@ use App\Services\StockService;
 use App\Services\StripeTerminalService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PosTerminal extends Page
 {
-    protected string $view = 'filament.admin.pages.pos-terminal';
+    protected string $view = 'filament.pos.pages.pos-terminal';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Shop';
-
-    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
-
-    protected static ?string $navigationLabel = 'POS Terminal';
+    // Root page of the dedicated POS panel (yamaha.test/pos) - no sidebar
+    // nav in that panel, so navigation group/icon/sort don't apply here.
+    protected static ?string $slug = '/';
 
     protected static ?string $title = 'POS Terminal';
-
-    protected static ?int $navigationSort = 1;
 
     public string $search = '';
 
@@ -55,7 +50,7 @@ class PosTerminal extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasAnyRole(['Admin', 'Manager', 'Sales']) ?? false;
+        return auth()->user()?->can_access_pos ?? false;
     }
 
     public function isCardPaymentConfigured(): bool
