@@ -126,6 +126,11 @@ class OrdersTable
                             ->success()
                             ->send();
                     }),
+                Action::make('pickingSlip')
+                    ->label('Picking Slip')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (Order $record) => route('orders.picking-slip', $record))
+                    ->openUrlInNewTab(),
                 ViewAction::make(),
             ])
             ->emptyStateHeading('No orders yet')

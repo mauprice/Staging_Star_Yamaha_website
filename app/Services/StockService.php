@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\OrderItemFulfillmentStatus;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -15,9 +16,9 @@ class StockService
      * the same order can't double-decrement.
      *
      * @return array<int, string> human-readable conflict messages for items
-     *                             that oversold (stock still clamped to 0,
-     *                             not blocked - the caller decides how to
-     *                             surface these, e.g. appended to notes)
+     *                            that oversold (stock still clamped to 0,
+     *                            not blocked - the caller decides how to
+     *                            surface these, e.g. appended to notes)
      */
     public function decrementForOrder(Order $order): array
     {
@@ -25,6 +26,13 @@ class StockService
 
         foreach ($order->items()->get() as $item) {
             if (! $item->product_id) {
+                continue;
+            }
+
+            // Back-ordered lines haven't been fulfilled yet - stock moves
+            // when they're later marked fulfilled (see BackOrders page),
+            // not at sale time.
+            if ($item->fulfillment_status === OrderItemFulfillmentStatus::BackOrdered) {
                 continue;
             }
 

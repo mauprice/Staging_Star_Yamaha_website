@@ -9,6 +9,7 @@ use App\Http\Controllers\HondaPartsCatalogueController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PartsCatalogueController;
 use App\Http\Controllers\PayPalWebhookController;
+use App\Http\Controllers\PickingSlipController;
 use App\Http\Controllers\PosReceiptController;
 use App\Http\Controllers\PreOwnedController;
 use App\Http\Controllers\ProfileController;
@@ -148,6 +149,8 @@ Route::post('/webhooks/paypal', [PayPalWebhookController::class, 'handle'])->nam
 Route::middleware('auth:pos,web')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
 
 Route::middleware('auth')->get('/admin/purchase-orders/{purchaseOrder}/print', [PurchaseOrderPrintController::class, 'show'])->name('purchase-orders.print');
+
+Route::middleware('auth')->get('/admin/orders/{order}/picking-slip', [PickingSlipController::class, 'show'])->name('orders.picking-slip');
 
 Route::middleware('auth')->prefix('account')->name('yamaha.account.')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders.index');
