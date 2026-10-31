@@ -55,6 +55,12 @@ class ProductsTable
                     ->color(fn ($state) => $state > 0 ? 'success' : 'danger')
                     ->description(fn (Product $record) => $record->needsReorder() ? 'Reorder' : null),
 
+                TextColumn::make('on_order')
+                    ->label('On Order')
+                    ->state(fn (Product $record) => $record->onOrderQuantity())
+                    ->placeholder('—')
+                    ->toggleable(),
+
                 IconColumn::make('active')
                     ->label('Live')
                     ->boolean()

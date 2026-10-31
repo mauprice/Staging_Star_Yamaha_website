@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PurchaseOrderStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -60,9 +61,29 @@ class Product extends Model
         return $this->hasMany(PurchaseOrderLine::class);
     }
 
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function needsReorder(): bool
     {
         return $this->min_stock !== null && $this->total_stock <= $this->min_stock;
+    }
+
+    /**
+     * Quantity still outstanding on open purchase orders - lines on
+     * cancelled/draft/fully-received POs don't count as "coming".
+     */
+    public function onOrderQuantity(): int
+    {
+        return (int) $this->purchaseOrderLines()
+            ->whereHas('purchaseOrder', fn ($q) => $q->whereIn('status', [
+                PurchaseOrderStatus::Sent,
+                PurchaseOrderStatus::PartiallyReceived,
+            ]))
+            ->get()
+            ->sum(fn (PurchaseOrderLine $line) => $line->quantityOutstanding());
     }
 
     public function isClothing(): bool
