@@ -1,0 +1,7 @@
+G29-E DR2 AC
+AC Power 2 Seater Golf Car
+
+PowerTech AC
+Independent Front Suspension
+Automotive Style Dash
+

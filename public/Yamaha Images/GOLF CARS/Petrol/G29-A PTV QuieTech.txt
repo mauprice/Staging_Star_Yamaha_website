@@ -1,0 +1,6 @@
+G29-A PTV QuieTech
+EFI 2 Seater PTV QuieTech
+
+QuieTech EFI
+Independent Front Suspension
+Independent Rear Suspension
