@@ -31,6 +31,14 @@ class PaymentSettings extends Page
     public string $stripe_key = '';
     public string $paypal_client_id = '';
     public string $paypal_mode = 'sandbox';
+    public string $paypal_webhook_id = '';
+
+    // Whether each method is switched on for the online store checkout -
+    // independent of whether its credentials are configured, so an admin
+    // can temporarily turn a gateway off without clearing its keys.
+    public bool $stripe_enabled = true;
+    public bool $paypal_enabled = true;
+    public bool $bank_transfer_enabled = true;
 
     // Secrets are never loaded into the form - these start (and stay,
     // after saving) blank. Leaving one blank on save means "don't
@@ -68,10 +76,15 @@ class PaymentSettings extends Page
         $this->stripe_key = (string) config('services.stripe.key');
         $this->paypal_client_id = (string) config('services.paypal.client_id');
         $this->paypal_mode = (string) (config('services.paypal.mode') ?: 'sandbox');
+        $this->paypal_webhook_id = (string) config('services.paypal.webhook_id');
 
         $this->stripe_secret_saved = filled(config('services.stripe.secret'));
         $this->stripe_webhook_secret_saved = filled(config('services.stripe.webhook_secret'));
         $this->paypal_client_secret_saved = filled(config('services.paypal.client_secret'));
+
+        $this->stripe_enabled = Setting::get('payment_stripe_enabled', '1') === '1';
+        $this->paypal_enabled = Setting::get('payment_paypal_enabled', '1') === '1';
+        $this->bank_transfer_enabled = Setting::get('payment_bank_transfer_enabled', '1') === '1';
     }
 
     public function save(): void
@@ -80,6 +93,10 @@ class PaymentSettings extends Page
         Setting::set('bank_deposit_account_name', trim($this->bank_deposit_account_name));
         Setting::set('bank_deposit_bsb', trim($this->bank_deposit_bsb));
         Setting::set('bank_deposit_account_number', trim($this->bank_deposit_account_number));
+
+        Setting::set('payment_stripe_enabled', $this->stripe_enabled ? '1' : '0');
+        Setting::set('payment_paypal_enabled', $this->paypal_enabled ? '1' : '0');
+        Setting::set('payment_bank_transfer_enabled', $this->bank_transfer_enabled ? '1' : '0');
 
         $writer = app(EnvFileWriter::class);
 
@@ -104,6 +121,7 @@ class PaymentSettings extends Page
             'PAYPAL_CLIENT_ID' => trim($this->paypal_client_id),
             'PAYPAL_CLIENT_SECRET' => $paypalClientSecret,
             'PAYPAL_MODE' => trim($this->paypal_mode) ?: 'sandbox',
+            'PAYPAL_WEBHOOK_ID' => trim($this->paypal_webhook_id),
         ]);
 
         // null means "left untouched" - only update the tracked saved-state
@@ -152,9 +170,19 @@ class PaymentSettings extends Page
         return filled($this->stripe_key) && $this->stripe_secret_saved;
     }
 
-    public function isPaypalKeysSaved(): bool
+    public function isPaypalConfigured(): bool
     {
         return filled($this->paypal_client_id) && $this->paypal_client_secret_saved;
+    }
+
+    public function paypalWebhookUrl(): string
+    {
+        return route('yamaha.webhooks.paypal');
+    }
+
+    public function stripeWebhookUrl(): string
+    {
+        return route('yamaha.webhooks.stripe');
     }
 
     public function isEnvWritable(): bool

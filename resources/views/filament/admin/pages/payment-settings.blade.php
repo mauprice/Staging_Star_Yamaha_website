@@ -129,6 +129,18 @@
 .ps-clear-label input { accent-color: #ef4444; }
 
 .ps-hint { font-size: 12px; color: #6b7280; margin-top: 6px; }
+
+.ps-switch-row { display: flex; align-items: center; gap: 10px; }
+.ps-switch-row input[type="checkbox"] { accent-color: #10b981; width: 16px; height: 16px; }
+.ps-switch-label { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+
+.ps-url-box {
+    display: flex; align-items: center; gap: 8px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px; color: #d1d5db;
+    background: #111827; border: 1px solid #374151; border-radius: 6px;
+    padding: 8px 10px; margin-top: 6px; overflow-x: auto; white-space: nowrap;
+}
 </style>
 
 <div class="ps-wrap">
@@ -136,28 +148,48 @@
     <div class="ps-card">
         <div class="ps-card-header">
             <h3>Gateway Status</h3>
-            <p>Checkout automatically offers whichever gateways are configured, and defaults to Direct Deposit when neither online gateway is set up.</p>
+            <p>Checkout offers a gateway only when it's both configured below AND switched on here. Direct Deposit needs no credentials, so its switch is the only thing that matters. If nothing is on, Direct Deposit is used as the fallback.</p>
         </div>
         <div class="ps-status-row">
             <span>Stripe (card payments)</span>
-            @if($this->isStripeConfigured())
-            <span class="ps-badge ps-badge-on">Configured</span>
-            @else
-            <span class="ps-badge ps-badge-off">Not Configured</span>
-            @endif
+            <div class="ps-switch-row">
+                @if($this->isStripeConfigured())
+                    @if($stripe_enabled)
+                    <span class="ps-badge ps-badge-on">Active at Checkout</span>
+                    @else
+                    <span class="ps-badge ps-badge-off">Configured, Switched Off</span>
+                    @endif
+                @else
+                <span class="ps-badge ps-badge-off">Not Configured</span>
+                @endif
+                <label class="ps-clear-label"><input type="checkbox" wire:model.live="stripe_enabled"> On</label>
+            </div>
         </div>
         <div class="ps-status-row">
             <span>PayPal</span>
-            <span class="ps-badge ps-badge-off">Not Yet Available</span>
+            <div class="ps-switch-row">
+                @if($this->isPaypalConfigured())
+                    @if($paypal_enabled)
+                    <span class="ps-badge ps-badge-on">Active at Checkout</span>
+                    @else
+                    <span class="ps-badge ps-badge-off">Configured, Switched Off</span>
+                    @endif
+                @else
+                <span class="ps-badge ps-badge-off">Not Configured</span>
+                @endif
+                <label class="ps-clear-label"><input type="checkbox" wire:model.live="paypal_enabled"> On</label>
+            </div>
         </div>
-        @if($this->isPaypalKeysSaved())
-        <div class="ps-status-row">
-            <span style="color:#9ca3af; font-size: 13px;">↳ Keys are saved below, ready for when PayPal checkout is added.</span>
-        </div>
-        @endif
         <div class="ps-status-row">
             <span>Direct Deposit</span>
-            <span class="ps-badge ps-badge-on">Always Available</span>
+            <div class="ps-switch-row">
+                @if($bank_transfer_enabled)
+                <span class="ps-badge ps-badge-on">Active at Checkout</span>
+                @else
+                <span class="ps-badge ps-badge-off">Switched Off</span>
+                @endif
+                <label class="ps-clear-label"><input type="checkbox" wire:model.live="bank_transfer_enabled"> On</label>
+            </div>
         </div>
     </div>
 
@@ -223,14 +255,15 @@
                     </label>
                     @endif
                 </div>
-                <p class="ps-hint">From your webhook endpoint's settings in the Stripe Dashboard, or `stripe listen` for local testing.</p>
+                <p class="ps-hint">From your webhook endpoint's settings in the Stripe Dashboard, or `stripe listen` for local testing. Endpoint URL:</p>
+                <div class="ps-url-box">{{ $this->stripeWebhookUrl() }}</div>
             </div>
         </div>
 
         <div class="ps-card">
             <div class="ps-card-header">
                 <h3>PayPal Keys</h3>
-                <p>PayPal checkout isn't built yet — these are saved for when it is, and won't be offered to customers in the meantime.</p>
+                <p>From your PayPal Developer Dashboard → Apps & Credentials. Adding a Client Secret here is what turns PayPal on at checkout (once the switch above is also on).</p>
             </div>
             <div class="ps-row">
                 <label for="paypal_client_id">Client ID</label>
@@ -253,6 +286,12 @@
                     <option value="sandbox">Sandbox (testing)</option>
                     <option value="live">Live</option>
                 </select>
+            </div>
+            <div class="ps-row">
+                <label for="paypal_webhook_id">Webhook ID</label>
+                <input id="paypal_webhook_id" type="text" wire:model="paypal_webhook_id" class="ps-input" placeholder="1AB2345CD6789...">
+                <p class="ps-hint">Register a webhook in the PayPal Dashboard pointed at the URL below, subscribed to "Payment capture completed" and "Payment capture denied", then paste its Webhook ID here. This is a backup for confirming payment if a customer closes the tab before returning from PayPal — checkout works without it, but payments won't be confirmed automatically if that happens.</p>
+                <div class="ps-url-box">{{ $this->paypalWebhookUrl() }}</div>
             </div>
         </div>
 

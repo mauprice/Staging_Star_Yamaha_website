@@ -5,7 +5,7 @@ namespace App\Enums;
 enum PaymentMethod: string
 {
     case Stripe = 'stripe';
-    case PayPal = 'paypal'; // Phase 4
+    case PayPal = 'paypal';
     case BankTransfer = 'bank_transfer'; // Phase 4
     case Cash = 'cash';
     case CardPresent = 'card_present';

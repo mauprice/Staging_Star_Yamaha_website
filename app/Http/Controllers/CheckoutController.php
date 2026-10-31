@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Mail\OrderAccountMatchMail;
 use App\Mail\OrderBankDepositMail;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\PaymentAvailability;
+use App\Services\PayPalCheckoutService;
 use App\Services\ShippingCalculator;
 use App\Services\StripeCheckoutService;
 use App\Support\PhoneNumber;
@@ -84,6 +86,21 @@ class CheckoutController extends Controller
         [$order, $matchedUser] = $this->createOrder($items, $validated, $paymentMethod, $request);
 
         try {
+            if ($paymentMethod === PaymentMethod::PayPal) {
+                $paypal = app(PayPalCheckoutService::class)->createOrderFor($order->fresh('items'));
+
+                Payment::create([
+                    'order_id' => $order->id,
+                    'provider' => 'paypal',
+                    'provider_reference' => $paypal['id'],
+                    'status' => PaymentStatus::Pending,
+                    'amount' => $order->total,
+                    'currency' => $order->currency,
+                ]);
+
+                return redirect()->away($paypal['approve_url']);
+            }
+
             $stripeCheckoutService = app(StripeCheckoutService::class);
             $session = $stripeCheckoutService->createSessionFor($order->fresh('items'));
 
@@ -98,7 +115,7 @@ class CheckoutController extends Controller
 
             return redirect()->away($session->url);
         } catch (\Throwable $e) {
-            Log::error('Stripe checkout session creation failed', [
+            Log::error(($paymentMethod === PaymentMethod::PayPal ? 'PayPal' : 'Stripe') . ' checkout session creation failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
@@ -109,6 +126,86 @@ class CheckoutController extends Controller
             return redirect()->route('yamaha.checkout.index')
                 ->with('error', "We couldn't start the payment process. Your cart has been restored - please try again.");
         }
+    }
+
+    /**
+     * Where PayPal sends the customer's browser back after they approve
+     * payment on PayPal's site - this is what actually captures the funds.
+     * The PAYMENT.CAPTURE.COMPLETED webhook is a safety net for the case
+     * where the customer never makes it back here (e.g. closes the tab).
+     */
+    public function paypalReturn(Order $order, PayPalCheckoutService $paypal): RedirectResponse
+    {
+        abort_unless($order->payment_method === PaymentMethod::PayPal, 404);
+
+        $payment = $order->payments()->where('provider', 'paypal')->latest()->first();
+
+        abort_unless($payment, 404);
+
+        if ($payment->status === PaymentStatus::Succeeded) {
+            return redirect()->route('yamaha.checkout.success', ['ref' => $payment->provider_reference]);
+        }
+
+        try {
+            $capture = $paypal->captureOrder($payment->provider_reference);
+        } catch (\Throwable $e) {
+            // PayPal errors if a capture is attempted twice (e.g. the
+            // PAYMENT.CAPTURE.COMPLETED webhook already captured it in the
+            // few seconds before this redirect landed) - that's success,
+            // not a failure, so check before concluding otherwise.
+            if ($payment->fresh()->status === PaymentStatus::Succeeded) {
+                return redirect()->route('yamaha.checkout.success', ['ref' => $payment->provider_reference]);
+            }
+
+            Log::error('PayPal capture failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+
+            $order->update(['status' => OrderStatus::PaymentFailed]);
+            $this->restoreCartItems($order);
+
+            return redirect()->route('yamaha.checkout.index')
+                ->with('error', "We couldn't confirm your PayPal payment. Your cart has been restored - please try again.");
+        }
+
+        if (($capture['status'] ?? null) !== 'COMPLETED') {
+            $order->update(['status' => OrderStatus::PaymentFailed]);
+            $payment->update(['status' => PaymentStatus::Failed, 'raw_response' => $capture['raw']]);
+            $this->restoreCartItems($order);
+
+            return redirect()->route('yamaha.checkout.index')
+                ->with('error', 'PayPal declined this payment. Your cart has been restored - please try again.');
+        }
+
+        // Idempotent against the capture webhook landing first (e.g. the
+        // customer sat on PayPal's page long enough for it to arrive before
+        // they clicked back) - whichever of the two gets here first wins,
+        // the other is a no-op under this lock.
+        DB::transaction(function () use ($order, $payment, $capture) {
+            $freshOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            $freshPayment = Payment::where('id', $payment->id)->lockForUpdate()->first();
+
+            if ($freshPayment->status === PaymentStatus::Succeeded) {
+                return;
+            }
+
+            if ($freshOrder->status !== OrderStatus::Paid) {
+                $freshOrder->update(['status' => OrderStatus::Paid]);
+            }
+
+            $freshPayment->update([
+                'status' => PaymentStatus::Succeeded,
+                'paid_at' => now(),
+                'raw_response' => $capture['raw'],
+            ]);
+        });
+
+        $order->refresh();
+
+        if ($order->placed_as_guest && $order->user_id) {
+            $order->loadMissing('user');
+            Mail::to($order->user->email)->queue(new OrderAccountMatchMail($order));
+        }
+
+        return redirect()->route('yamaha.checkout.success', ['ref' => $payment->provider_reference]);
     }
 
     public function review(ShippingCalculator $shippingCalculator): RedirectResponse|View

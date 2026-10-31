@@ -16,6 +16,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceBookingReplyController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SpecialController;
+use App\Http\Controllers\PayPalWebhookController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\YamahaController;
 use Illuminate\Support\Facades\Route;
@@ -137,9 +138,11 @@ Route::prefix('checkout')->name('yamaha.checkout.')->group(function () {
     Route::get('/success', [CheckoutController::class, 'success'])->name('success');
     Route::get('/cancel/{order}', [CheckoutController::class, 'cancel'])->name('cancel');
     Route::post('/cancel/{order}/restore', [CheckoutController::class, 'restore'])->name('restore');
+    Route::get('/paypal/return/{order}', [CheckoutController::class, 'paypalReturn'])->name('paypal.return');
 });
 
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('yamaha.webhooks.stripe');
+Route::post('/webhooks/paypal', [PayPalWebhookController::class, 'handle'])->name('yamaha.webhooks.paypal');
 
 Route::middleware('auth')->get('/pos/receipt/{order}', [PosReceiptController::class, 'show'])->name('yamaha.pos.receipt');
 

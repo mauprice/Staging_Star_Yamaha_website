@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Enums\PaymentMethod;
+use App\Models\Setting;
 
 /**
- * Which payment methods checkout can actually offer, based on whether
- * their gateway credentials are configured. Direct deposit needs no
- * external credentials - it's dealer-verified by hand - so it's always
- * available and is the fallback default when neither online gateway is
- * configured.
+ * Which payment methods checkout can actually offer: a gateway is only
+ * offered when its credentials are configured AND it's switched on in
+ * Admin > Payment Settings. Direct deposit needs no external credentials -
+ * it's dealer-verified by hand - so only the switch applies to it, and
+ * it's the fallback default when nothing else is available.
  */
 class PaymentAvailability
 {
@@ -20,10 +21,22 @@ class PaymentAvailability
 
     public function paypalConfigured(): bool
     {
-        // PayPal gateway integration isn't built yet (planned for a later
-        // phase) - always false so it's never offered as a selectable
-        // option regardless of credentials being present in config.
-        return false;
+        return filled(config('services.paypal.client_id')) && filled(config('services.paypal.client_secret'));
+    }
+
+    public function stripeEnabled(): bool
+    {
+        return Setting::get('payment_stripe_enabled', '1') === '1';
+    }
+
+    public function paypalEnabled(): bool
+    {
+        return Setting::get('payment_paypal_enabled', '1') === '1';
+    }
+
+    public function bankTransferEnabled(): bool
+    {
+        return Setting::get('payment_bank_transfer_enabled', '1') === '1';
     }
 
     /**
@@ -32,18 +45,14 @@ class PaymentAvailability
     public function availableMethods(): array
     {
         return array_values(array_filter([
-            $this->stripeConfigured() ? PaymentMethod::Stripe : null,
-            $this->paypalConfigured() ? PaymentMethod::PayPal : null,
-            PaymentMethod::BankTransfer,
+            $this->stripeConfigured() && $this->stripeEnabled() ? PaymentMethod::Stripe : null,
+            $this->paypalConfigured() && $this->paypalEnabled() ? PaymentMethod::PayPal : null,
+            $this->bankTransferEnabled() ? PaymentMethod::BankTransfer : null,
         ]));
     }
 
     public function defaultMethod(): PaymentMethod
     {
-        return match (true) {
-            $this->stripeConfigured() => PaymentMethod::Stripe,
-            $this->paypalConfigured() => PaymentMethod::PayPal,
-            default => PaymentMethod::BankTransfer,
-        };
+        return $this->availableMethods()[0] ?? PaymentMethod::BankTransfer;
     }
 }

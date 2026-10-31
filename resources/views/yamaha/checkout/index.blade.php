@@ -213,6 +213,8 @@
                                     <span class="block text-xs text-gray-500 mt-0.5">
                                         @if($method->value === 'stripe')
                                         Pay securely by card via Stripe. You'll be redirected to enter your details.
+                                        @elseif($method->value === 'paypal')
+                                        Pay with your PayPal balance, bank account or card. You'll be redirected to PayPal to approve the payment.
                                         @elseif($method->value === 'bank_transfer')
                                         We'll email you our bank details. Your order ships once we've confirmed the deposit.
                                         @endif
@@ -225,6 +227,8 @@
                         <input type="hidden" name="payment_method" value="{{ $defaultMethod->value }}">
                         @if($defaultMethod->value === 'stripe')
                         <p class="text-sm text-gray-500">You'll be redirected to Stripe's secure checkout to enter your card details. Your card details never touch our servers.</p>
+                        @elseif($defaultMethod->value === 'paypal')
+                        <p class="text-sm text-gray-500">You'll be redirected to PayPal to log in and approve the payment, then brought back here to complete your order.</p>
                         @elseif($defaultMethod->value === 'bank_transfer')
                         <p class="text-sm text-gray-500">Pay by direct deposit — we'll email you our bank details. Your order ships once we've confirmed the deposit has been received.</p>
                         @endif
